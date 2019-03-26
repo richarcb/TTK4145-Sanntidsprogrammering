@@ -9,7 +9,7 @@ import (
 	sync "../Synchronizing"
 	"../driver/elevio"
 	//"config"
-	//"fmt"
+	"fmt"
 	//linux:
 	//"../driver/elevio"
 )
@@ -20,13 +20,15 @@ import (
  elevio.ButtonEvent, door_timer_ch<-chan int,extern_order_ch<-chan elevio.ButtonEvent, buttons_ch <-chan elevio.ButtonEvent,
 floors_ch <-chan int, init_ch <-chan int, /*receiveing channels
 reached_extern_floor_ch chan<- elevio.ButtonEvent, new_order_ch chan<- elevio.ButtonEvent, state_ch chan<- Current_state*/
-func Distribute_and_control(init_outgoing_msg_ch <-chan sync.Msg_struct,cancel_illuminate_extern_order_ch chan<- int,illuminate_extern_order_ch chan<- elevio.ButtonEvent, reset_received_order_ch <-chan bool, update_outgoing_msg_ch chan<- sync.Msg_struct, update_elev_list <-chan sync.Msg_struct, lost_peers_ch <-chan []int, new_peer_ch <-chan int, new_order_ch <-chan elevio.ButtonEvent, state_ch <-chan FSM.Elevator, extern_order_ch chan<- elevio.ButtonEvent) {
+func Distribute_and_control(clear_lights_and_extern_orders_ch chan<- int, cancel_illuminate_extern_order_ch chan<- int,illuminate_extern_order_ch chan<- elevio.ButtonEvent, reset_received_order_ch <-chan bool, update_outgoing_msg_ch chan<- sync.Msg_struct, update_elev_list <-chan sync.Msg_struct, lost_peers_ch <-chan []string, new_peer_ch <-chan string, new_order_ch <-chan elevio.ButtonEvent, state_ch <-chan FSM.Elevator, extern_order_ch chan<- elevio.ButtonEvent) {
 
 	for {
 		select {
-		case outgoing_msg = <-init_outgoing_msg_ch:
+		//case outgoing_msg = <-init_outgoing_msg_ch:
 		case inc_msg := <-update_elev_list:
-			if inc_msg.ID != config.ID{
+			//fmt.Println((*elev_list[elevID]).State)
+			//fmt.Println((*elev_list[inc_msg.ID]).State)
+			if inc_msg.ID != elevID{
 				update_extern_elevator_struct(inc_msg)
 				for i:=0;i<2;i++{
 					for j:=0; j<config.N_elevators;j++{
@@ -36,12 +38,16 @@ func Distribute_and_control(init_outgoing_msg_ch <-chan sync.Msg_struct,cancel_i
 									//Add order to list!
 									//Set to zero
 									//illuminate button
+									//fmt.Println("HALLELUJA")
 									bt_type := elevio.BT_HallUp
 									if i == 1{bt_type = elevio.BT_HallDown}
 									order:=elevio.ButtonEvent{Button: bt_type, Floor: j}
 									assignedID:= getLowestCostElevatorID(order)
 									add_order_to_elevlist(assignedID, order)
-									if assignedID == config.ID{
+									//fmt.Println(assignedID)
+									//fmt.Println(elevID)
+									if assignedID == elevID{
+										fmt.Println("FUCK")
 										go func(){extern_order_ch <- order}()
 									}else{
 										go func(){illuminate_extern_order_ch<-order}()
@@ -52,24 +58,30 @@ func Distribute_and_control(init_outgoing_msg_ch <-chan sync.Msg_struct,cancel_i
 							case 1:
 								if outgoing_msg.Ack_list[i][j] == 0{
 									outgoing_msg.Ack_list[i][j] = 1
-								}else if outgoing_msg.Ack_list[i][j] == 1{
+								}
+								if outgoing_msg.Ack_list[i][j] == 1{
 									bt_type := elevio.BT_HallUp
 									if i == 1{bt_type = elevio.BT_HallDown}
 									order:=elevio.ButtonEvent{Button: bt_type, Floor: j}
 									assignedID := getLowestCostElevatorID(order)
-									if assignedID == config.ID{
+									/*fmt.Println((*elev_list[elevID]).queue)
+									fmt.Println((*elev_list[inc_msg.ID]).queue)*/
+									//fmt.Println(elevID)
+									//fmt.Println(assignedID)
+									if assignedID == elevID{
 										outgoing_msg.Ack_list[i][j] = -1
 									}
 								}
 							case -1:
 								if outgoing_msg.Ack_list[i][j] == 1{
 									outgoing_msg.Ack_list[i][j] = -1
-								}else if outgoing_msg.Ack_list[i][j] == -1{
+								}
+								if outgoing_msg.Ack_list[i][j] == -1{
 									bt_type := elevio.BT_HallUp
 									if i == 1{bt_type = elevio.BT_HallDown}
 									order:=elevio.ButtonEvent{Button: bt_type, Floor: j}
 									assignedID:= getLowestCostElevatorID(order)
-									if assignedID == outgoing_msg.ID{
+									if assignedID == inc_msg.ID{
 										outgoing_msg.Ack_list[i][j]=0
 										add_order_to_elevlist(assignedID, order)
 									}
@@ -78,46 +90,45 @@ func Distribute_and_control(init_outgoing_msg_ch <-chan sync.Msg_struct,cancel_i
 					}
 				}
 				go func(){update_outgoing_msg_ch <- outgoing_msg}()
+				if inc_msg.State == FSM.DOOROPEN{
+					go func(){clear_lights_and_extern_orders_ch<-inc_msg.Last_known_floor}()
+						(*elev_list[inc_msg.ID]).queue[0][inc_msg.Last_known_floor] = 0
+						(*elev_list[inc_msg.ID]).queue[1][inc_msg.Last_known_floor] = 0
+				}
+
+				if elev_list[elevID].State == FSM.DOOROPEN{
+					(*elev_list[elevID]).queue[0][elev_list[elevID].Last_known_floor] = 0
+					(*elev_list[elevID]).queue[1][elev_list[elevID].Last_known_floor] = 0
+				}
 			}
 
 		case lost_peers:= <- lost_peers_ch:
-			lost_peers_list := make([]int, len(lost_peers))
 			for i := 0; i < len(lost_peers); i++ {
-				offline_elevator_list[lost_peers_list[i]] = true
+				//Take Orders first!
+				delete(elev_list, lost_peers[i])
 			}
-			online_elev := 0
-			for i := 0; i < len(offline_elevator_list); i++ {
-				if offline_elevator_list[i] == false {
-					online_elev++
-				}
-			}
-			if online_elev == 1 {
+			if len(elev_list) == 1 {
 				single_mode = true
 			}
 
 		case new_peer:= <-new_peer_ch:
-			offline_elevator_list[new_peer] = false
-			online_elev := 0
-			for i := 0; i < len(offline_elevator_list); i++ {
-				if offline_elevator_list[i] == false {
-					online_elev++
-				}
-			}
-			if online_elev > 1 {
+			add_new_peer_to_elevlist(new_peer)
+			if len(elev_list) > 1 {
+
 				single_mode = false
 			}
 
 		case order := <-new_order_ch:
 			if single_mode{
-				extern_order_ch <- order
+				go func(){extern_order_ch <- order}()
 			}else{
 				set_value_in_ack_list(1,order)
 				go func(){update_outgoing_msg_ch <- outgoing_msg}()
 			}
-
 		case state := <-state_ch:
 			update_local_elevator_struct(state)
-
+			update_outgoing_msg(state)
+			fmt.Println(single_mode)
 		case <-reset_received_order_ch:
 			update_outgoing_msg_ch <- outgoing_msg
 		}

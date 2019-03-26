@@ -27,6 +27,7 @@ func remove_elem(index int) {
 	}
 }
 func insert_front(front_elem elevio.ButtonEvent) {
+
 	for i := len(queue) - 1; i > 0; i-- {
 		queue[i] = queue[i-1]
 	}
@@ -35,7 +36,10 @@ func insert_front(front_elem elevio.ButtonEvent) {
 
 func push_back(elem elevio.ButtonEvent) {
 	for i := 0; i < len(queue); i++ {
-		if queue[i].Floor == Empty_order.Floor {
+		if queue[i].Floor == elem.Floor && queue[i].Button == elem.Button{
+			return
+		}
+		if queue[i].Floor == Empty_order.Floor{
 			queue[i] = elem
 			break
 		}
@@ -225,9 +229,22 @@ func button_event(button_pushed elevio.ButtonEvent, new_order_ch chan<- elevio.B
 		reset_timer_ch <- true
 	} else { //Send order to other Module
 		new_order := elevio.ButtonEvent{Floor: button_pushed.Floor, Button: button_pushed.Button}
-		new_order_ch <- new_order
+		go func(){new_order_ch <- new_order}()
 	}
 }
+func clear_extern_ligts_on_floor(floor int){
+	for i := elevio.BT_HallUp; i <= elevio.BT_HallDown; i++ {
+		elevio.SetButtonLamp(i, floor, false)
+	}
+}
+func clear_extern_order_on_floor(floor int){
+	for i := 0; i < len(queue); i++ {
+		if queue[i].Floor == floor {
+			remove_elem(i)
+		}
+	}
+}
+
 
 func clear_all_lights_on_floor(floor int) {
 	for i := elevio.BT_HallUp; i <= elevio.BT_Cab; i++ {

@@ -6,8 +6,8 @@ const (
 	N_floors    = 4
 	N_elevators = 3
 	//Local variables
-	ID = 0 //{0,1,2,3}
 )
+
 /*
 type Msg_struct struct {
 	//Destination floor

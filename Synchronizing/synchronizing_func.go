@@ -10,7 +10,7 @@ import ( /*"fmt"
 	"../FSM"
 	"../driver/elevio"
 
-	"../network/localip"
+	//"../network/localip"
 )
 
 
@@ -24,30 +24,30 @@ type Msg_struct struct {
 	Last_known_floor int
 	Dir              elevio.MotorDirection
 	State            FSM.ElevState
-	ID               int
+	ID               string
 	Ack_list				 [2][config.N_floors]int
-	IP 							 string
 }
 
 var outgoing_msg Msg_struct
 
+/*
+func Init_sync(init_ID_ch <-chan string,init_outgoing_msg_ch chan<- Msg_struct) {
+	select{
 
-func Init_sync(init_outgoing_msg_ch chan<- Msg_struct) {
-
-	var empty_ack_list [2][config.N_floors]int // Not shallow copy!
-	for i := 0; i < 2; i++ {
-		for j := 0; j < config.N_floors; j++ {
-			empty_ack_list[i][j] = 0
+	case ID_string:=<-init_ID_ch:
+		var empty_ack_list [2][config.N_floors]int // Not shallow copy!
+		for i := 0; i < 2; i++ {
+			for j := 0; j < config.N_floors; j++ {
+				empty_ack_list[i][j] = 0
+			}
 		}
+		//elevIP,_ := localip.LocalIP()
+		empty_msg := Msg_struct{Destination: FSM.Empty_order, Last_known_floor: -1, Dir: elevio.MD_Stop, State: FSM.IDLE,  Ack_list: empty_ack_list, ID: ID_string}
+		outgoing_msg = empty_msg
+		go func(){init_outgoing_msg_ch<-outgoing_msg}()
 	}
-	elevIP,_ := localip.LocalIP()
-	empty_msg := Msg_struct{Destination: FSM.Empty_order, Last_known_floor: -1, Dir: elevio.MD_Stop, State: FSM.IDLE,  Ack_list: empty_ack_list, ID: config.ID, IP: elevIP}
-	outgoing_msg = empty_msg
-	go func(){init_outgoing_msg_ch<-outgoing_msg}()
-
-
 }
-
+*/
 
 
 /*

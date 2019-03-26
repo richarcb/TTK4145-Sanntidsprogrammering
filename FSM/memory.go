@@ -25,7 +25,6 @@ type Elevator struct {
 	Last_known_floor int
 	Dir              elevio.MotorDirection
 	State            ElevState
-	ID               int
 }
 
 var Empty_order elevio.ButtonEvent
@@ -57,5 +56,4 @@ func Init_mem() {
 	elevator.Last_known_floor = -1
 	elevator.Dir = elevio.MD_Stop
 	elevator.State = IDLE
-	elevator.ID = config.ID
 }
