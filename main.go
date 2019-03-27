@@ -88,9 +88,7 @@ func main() {
 	   peer_update_ch := make(chan peers.PeerUpdate)
 	   peer_trans_en_ch := make(chan bool)
 	*/
-	//Local FSM:
-	door_timer_ch := make(chan bool)
-	reset_timer_ch := make(chan bool)
+	//Local FSM
 	//reset_timer_pl_ch  := make(chan bool)
 	//stop_timer_pl_ch  := make(chan bool)
 	//power_loss_ch  := make(chan bool)
@@ -114,9 +112,9 @@ func main() {
 	go elevio.PollFloorSensor(floors_ch)
 	//go elevio.PollObstructionSwitch(drv_obstr)
 	//go elevio.PollStopButton(drv_stop)
-	go FSM.DoorTimer(door_timer_ch, reset_timer_ch)
+
 	go control.Distribute_and_control(clear_lights_and_extern_orders_ch, cancel_illuminate_extern_order_ch, illuminate_extern_order_ch,reset_received_order_ch, update_outgoing_msg_ch, update_elev_list, lost_peers_ch, new_peer_ch, new_order_ch, state_ch, extern_order_ch)
-	go FSM.Fsm(clear_lights_and_extern_orders_ch, start_floor, cancel_illuminate_extern_order_ch, illuminate_extern_order_ch, door_timer_ch, extern_order_ch, buttons_ch, floors_ch, reached_extern_floor_ch, new_order_ch, state_ch, reset_timer_ch)
+	go FSM.Fsm(clear_lights_and_extern_orders_ch, start_floor, cancel_illuminate_extern_order_ch, illuminate_extern_order_ch, extern_order_ch, buttons_ch, floors_ch, reached_extern_floor_ch, new_order_ch, state_ch)
 	go sync.Synchronizing(init_outgoing_msg_ch, reset_received_order_ch, update_outgoing_msg_ch, outgoing_msg_ch, incoming_msg_ch, update_elev_list, peer_update_ch, peer_trans_en_ch, lost_peers_ch, new_peer_ch)
 
 

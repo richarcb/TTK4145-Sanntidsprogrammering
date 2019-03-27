@@ -31,7 +31,7 @@ func Distribute_and_control(clear_lights_and_extern_orders_ch chan<- int, cancel
 			if inc_msg.ID != elevID{
 				update_extern_elevator_struct(inc_msg)
 				for i:=0;i<2;i++{
-					for j:=0; j<config.N_elevators;j++{
+					for j:=0; j<config.N_floors;j++{
 						switch inc_msg.Ack_list[i][j]{
 							case 0:
 								if outgoing_msg.Ack_list[i][j] == -1{
@@ -47,7 +47,6 @@ func Distribute_and_control(clear_lights_and_extern_orders_ch chan<- int, cancel
 									//fmt.Println(assignedID)
 									//fmt.Println(elevID)
 									if assignedID == elevID{
-										fmt.Println("FUCK")
 										go func(){extern_order_ch <- order}()
 									}else{
 										go func(){illuminate_extern_order_ch<-order}()
@@ -84,6 +83,7 @@ func Distribute_and_control(clear_lights_and_extern_orders_ch chan<- int, cancel
 									if assignedID == inc_msg.ID{
 										outgoing_msg.Ack_list[i][j]=0
 										add_order_to_elevlist(assignedID, order)
+										go func(){illuminate_extern_order_ch<-order}()
 									}
 								}
 						}

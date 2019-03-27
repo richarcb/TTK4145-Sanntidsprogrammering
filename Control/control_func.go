@@ -122,13 +122,21 @@ func update_extern_elevator_struct(elevator sync.Msg_struct) {
 func cost_function(id string, order elevio.ButtonEvent) int {
 	cost := 0
 	if (elev_list[id].State == FSM.IDLE || elev_list[id].State == FSM.DOOROPEN) && elev_list[id].Last_known_floor == order.Floor{cost-=15}
-
+	//Order already in list...
+	if (*elev_list[id]).Destination.Floor == order.Floor{
+		cost -= 15
+	}
+	for i:= 0; i<2 ; i++{
+		if (*elev_list[id]).queue[i][order.Floor] == 1{
+			cost -= 15
+		}
+	}
+	
 	if order.Button == elevio.BT_HallUp { //Order is up
 		if elev_list[id].Last_known_floor < order.Floor && elev_list[id].Destination.Floor > order.Floor { //going up and flor is between:
 			cost -= 10
 		}
-	} else { //Order is down
-		order.Floor -= config.N_floors - 2                                                                                                                  //config.N_floors-2 since the first down button is in the second floor!
+	} else { //Order is down                                                                                                              //config.N_floors-2 since the first down button is in the second floor!
 		if elev_list[id].Last_known_floor > order.Floor && elev_list[id].Destination.Floor < order.Floor && elev_list[id].State == FSM.MOVING { //going down and floor is between orders:Needs to check MOVING since no destination 0-1<order.Floor
 			cost -= 10
 		}

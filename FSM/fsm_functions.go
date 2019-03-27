@@ -189,10 +189,10 @@ func button_event(button_pushed elevio.ButtonEvent, new_order_ch chan<- elevio.B
 		case IDLE:
 			fsm_print()
 			if button_pushed.Floor == elevator.Last_known_floor {
+				elevator.Destination = button_pushed
 				open_door()
 				reset_timer_ch <- true
 			} else {
-
 				elevio.SetButtonLamp(elevio.BT_Cab, button_pushed.Floor, true)
 				//Inside order: Add order to intern list, no need for sharing
 				intern_order_list[button_pushed.Floor] = 1
@@ -214,6 +214,9 @@ func button_event(button_pushed elevio.ButtonEvent, new_order_ch chan<- elevio.B
 		case DOOROPEN:
 			fsm_print()
 			if button_pushed.Floor == elevator.Last_known_floor {
+				if elevator.Destination.Floor == Empty_order.Floor{//BUGFIX
+					elevator.Destination = button_pushed
+				}
 				open_door()
 				reset_timer_ch <- true
 			} else {
@@ -291,7 +294,6 @@ func door_open_event() {
 			elevator.Destination = Empty_order
 			find_new_destination(priorityVariable)
 		}
-
 		check_for_extra_stop()
 		update_direction()
 		elevio.SetMotorDirection(elevator.Dir)
@@ -304,8 +306,8 @@ func door_open_event() {
 func extern_order_event(order elevio.ButtonEvent, reset_timer_ch chan<- bool) {
 	switch elevator.State {
 	case IDLE:
-		fsm_print()
 		if order.Floor == elevator.Last_known_floor {
+			elevator.Destination = order
 			open_door()
 			reset_timer_ch <- true
 		} else {
@@ -321,14 +323,14 @@ func extern_order_event(order elevio.ButtonEvent, reset_timer_ch chan<- bool) {
 
 		}
 	case MOVING:
-		fsm_print()
 		elevio.SetButtonLamp(order.Button, order.Floor, true)
-		//Inside order: Add order to intern list, no need for sharing
 		push_back(order)
 		check_for_extra_stop()
 	case DOOROPEN:
-		fsm_print()
-		if order.Floor == elevator.Last_known_floor {
+		if order.Floor == elevator.Last_known_floor{
+			if elevator.Destination.Floor == Empty_order.Floor{
+				elevator.Destination = order
+			}
 			open_door()
 			reset_timer_ch <- true
 		} else {
