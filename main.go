@@ -52,16 +52,19 @@ func main() {
 		}
 		id = fmt.Sprintf("peer-%s-%d", localIP, os.Getpid())
 	}
-//15657
-	elevio.Init("localhost:"+port, config.N_floors)
-	FSM.Init_mem()
-	start_floor := elevio.InitElev()
-
 	init_outgoing_msg_ch:=make(chan sync.Msg_struct)
 	init_ID_ch:=make(chan string,1)
 
 	go control.Init_variables(init_ID_ch, init_outgoing_msg_ch)
 	init_ID_ch<-id
+
+
+//15657
+	elevio.Init("localhost:"+port, config.N_floors)
+	FSM.Init_mem()
+	start_floor := elevio.InitElev()
+
+
 
 	/*drv_buttons := make(chan elevio.ButtonEvent)
 	  drv_floors  := make(chan int)

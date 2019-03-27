@@ -15,6 +15,7 @@ const (
 	IDLE     ElevState = 0
 	MOVING             = 1
 	DOOROPEN           = 2
+	POWERLOSS					 = 3
 )
 
 var extra_stop elevio.ButtonEvent

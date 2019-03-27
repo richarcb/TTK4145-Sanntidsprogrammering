@@ -23,19 +23,21 @@ func DoorTimer(close_door_ch chan<- bool, reset_timer <-chan bool) {
 	}
 }
 /*
-func Powerloss_timer(power_loss_ch chan<- bool, reset_timer_pl <-chan bool) {
-	const no_floor_time = 5 * time.Second
+func Powerloss_timer(power_loss_ch chan<- bool, reset_power_loss_timer_ch <-chan bool, stop_power_loss_timer_ch <-chan bool) {
+	const no_floor_time = 3 * time.Second
   //declare timer
-	timer := time.NewTimer(0)
-	timer.Stop()
+	timer2 := time.NewTimer(0)
+	timer2.Stop()
 
 	for {
 		select {
-		case <-reset_timer_pl:
-			timer.Reset(no_floor_time)
-		case <-timer.C:
-			timer.Stop()
-			power_loss_ch <- true
+		case <-reset_power_loss_timer_ch:
+			timer2.Reset(no_floor_time)
+		case <-timer2.C:
+			timer2.Stop()
+			go func(){power_loss_ch <- true}()
+		case <-stop_power_loss_timer_ch:
+			timer2.Stop()
 		}
 	}
 }
