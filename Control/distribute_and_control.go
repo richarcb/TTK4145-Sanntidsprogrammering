@@ -129,6 +129,14 @@ func Distribute_and_control(clear_lights_and_extern_orders_ch chan<- int, cancel
 		case lost_peers := <-lost_peers_ch:
 			for i := 0; i < len(lost_peers); i++ {
 				//Take Orders first!
+				for j := 0; j < 2; j++ {
+					for k := 0; k < config.N_floors; k++ {
+						if (*elev_list[lost_peers[i]]).queue[j][k] == 1 && outgoing_msg.Ack_list[j][k] != -1 {
+							outgoing_msg.Ack_list[j][k] = 1
+							(*elev_list[lost_peers[i]]).queue[j][k] = 0
+						}
+					}
+				}
 				delete(elev_list, lost_peers[i])
 			}
 			if len(elev_list) == 1 {
