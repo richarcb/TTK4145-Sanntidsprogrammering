@@ -6,7 +6,7 @@ import (
 )
 
 func DoorTimer(close_door_ch chan<- bool, reset_timer <-chan bool) {
-	const doorOpenTime = 5 * time.Second
+	const doorOpenTime = 3 * time.Second
 	//declare timer
 	timer := time.NewTimer(0)
 	timer.Stop()
@@ -23,7 +23,7 @@ func DoorTimer(close_door_ch chan<- bool, reset_timer <-chan bool) {
 }
 
 func Powerloss_timer(power_loss_ch chan<- bool, reset_power_loss_timer_ch <-chan bool, stop_power_loss_timer_ch <-chan bool) {
-	const no_floor_time = 3 * time.Second
+	const no_floor_time = 5 * time.Second
 	//declare timer
 	timer := time.NewTimer(0)
 	timer.Stop()

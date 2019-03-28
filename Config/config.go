@@ -1,12 +1,28 @@
 //ELEVATOR CONFIGURATION
 package config
+//import "flag"
+/*
+import "os"
+import "strconv"
+*/
+
+
+
 
 const (
 	//System variables
 	N_floors    = 4
 	N_elevators = 3
+
 	//Local variables
 )
+var ElevatorNumber int
+/*
+func Init_elevconfig(){
+	ElevatorString := os.Args[2]
+	ElevatorNumber, _ = strconv.Atoi(ElevatorString)
+}*/
+
 
 /*
 type Msg_struct struct {

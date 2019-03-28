@@ -35,7 +35,7 @@ import (
 
 func main() {
 	port := os.Args[1]
-
+	//config.Init_elevconfig()
 	var id string
 	flag.StringVar(&id, "id", "", "id of this peer")
 	flag.Parse()

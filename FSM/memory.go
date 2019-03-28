@@ -5,7 +5,8 @@ import (
 	"../driver/elevio"
 	//linux:
 	config "../Config"
-	//"backup"
+	"../backup"
+	"fmt"
 	//"../driver/elevio"
 )
 
@@ -43,14 +44,33 @@ func Init_mem() {
 	for i := 0; i < len(queue); i++ {
 		queue[i] = Empty_order
 	}
+	for i:=0; i<config.N_floors; i++{
+		clear_all_lights_on_floor(i)
+	}
+
+
+	if backup.BackupExists() {
+		fmt.Printf("BACKUP EXISTS")
+		intern_order_list = backup.ReadFromBackup()
+		for i := 0; i < config.N_floors; i++ {
+			if intern_order_list[i] == 1 {
+				fmt.Printf("SETTING LIGHTS")
+				elevio.SetButtonLamp(elevio.BT_Cab, i, true)
+			}
+		}
+
+	}
+	for i := 0; i < len(intern_order_list); i++ {
+		fmt.Println(intern_order_list[i])
+	}
 	//internal_order_list = backup.ReadFromBackup() // checking for backup
 	//OBS! SETT LYS HVIS BACKUP EKSISTERER:
 	/*
-	for i:= 0; i<len(internal_order_list){
-		if intern_order_list[i] == 1{
-			SetButtonLamp(BT_Cab, i, true)
+		for i:= 0; i<len(internal_order_list){
+			if intern_order_list[i] == 1{
+				SetButtonLamp(BT_Cab, i, true)
+				}
 			}
-		}
 	*/
 	extra_stop = Empty_order
 	elevator.Destination = Empty_order

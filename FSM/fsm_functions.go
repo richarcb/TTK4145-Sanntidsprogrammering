@@ -185,7 +185,6 @@ func drive() { //Drive
 
 func button_event(button_pushed elevio.ButtonEvent, new_order_ch chan<- elevio.ButtonEvent, reset_timer_ch chan<- bool, reset_power_loss_timer_ch chan<- bool) {
 	if button_pushed.Button == elevio.BT_Cab {
-		backup.UpdateBackup(intern_order_list) //New backup.
 		switch elevator.State {
 		case IDLE:
 			fsm_print()
@@ -225,10 +224,14 @@ func button_event(button_pushed elevio.ButtonEvent, new_order_ch chan<- elevio.B
 				intern_order_list[button_pushed.Floor] = 1
 				elevio.SetButtonLamp(elevio.BT_Cab, button_pushed.Floor, true)
 			}
+		case POWERLOSS:
+			elevio.SetButtonLamp(elevio.BT_Cab, button_pushed.Floor, true)
+			intern_order_list[button_pushed.Floor] = 1
+
 			/*fmt.Printf("opendoor")
 			timerReset <- true*/
 		}
-
+		backup.UpdateBackup(intern_order_list, elevator.Destination) //New backup.
 	} else if button_pushed.Floor == elevator.Last_known_floor && elevator.State != MOVING {
 		open_door()
 		reset_timer_ch <- true
@@ -265,19 +268,50 @@ func clear_all_order_on_floor(floor int) {
 	}
 }
 
-func power_loss_event() {
-	elevator.State = POWERLOSS
-	for i := 0; i < config.N_floors; i++ {
-		clear_all_order_on_floor(i)
+func power_loss_event(stop_power_loss_timer_ch chan<- bool) {
+	//QUICK // FIX
+	if elevator.State == MOVING{
+		elevator.State = POWERLOSS
+		for i := 0; i < config.N_floors; i++ {
+			clear_all_order_on_floor(i)
+		}
+	}else{
+		stop_power_loss_timer_ch<-true
 	}
+
 }
 
 func floor_event(floor int, reset_timer_ch chan<- bool, stop_power_loss_timer_ch chan<- bool, reset_power_loss_timer_ch chan<- bool) {
 	elevator.Last_known_floor = floor
+
 	switch elevator.State {
+	case IDLE:
+		on_floor:=false
+		for i:=0;i<len(intern_order_list);i++{
+			if intern_order_list[i] == 1 && elevator.Last_known_floor == i{
+
+				//konfigurer lys
+				elevator.Destination = elevio.ButtonEvent{Button: elevio.BT_Cab, Floor: i}
+				clear_all_lights_on_floor(i)
+				clear_all_order_on_floor(i)
+				open_door()
+				reset_timer_ch <- true
+				on_floor = true
+			}
+		}
+		if !on_floor{
+			find_new_destination(false)
+			check_for_extra_stop()
+			update_direction()
+			elevio.SetMotorDirection(elevator.Dir)
+			if elevator.Dir != elevio.MD_Stop{
+				elevator.State = MOVING
+				go func() { reset_power_loss_timer_ch <- true }()
+			}
+		}
+
 	case POWERLOSS:
 		if elevator.Destination.Floor == floor || extra_stop.Floor == floor {
-			//backup.CreateBackup(intern_order_list)
 			update_direction()
 			elevio.SetMotorDirection(elevator.Dir)
 			//konfigurer lys
@@ -289,14 +323,12 @@ func floor_event(floor int, reset_timer_ch chan<- bool, stop_power_loss_timer_ch
 			elevator.State = MOVING
 			go func() { reset_power_loss_timer_ch <- true }()
 		}
-
 	case MOVING:
 		go func() { reset_power_loss_timer_ch <- true }()
 		fsm_print()
 		if elevator.Destination.Floor == floor || extra_stop.Floor == floor {
 			//Stops_at_floor:
 			go func() { stop_power_loss_timer_ch <- true }()
-			//backup.CreateBackup(intern_order_list)
 			update_direction()
 			elevio.SetMotorDirection(elevator.Dir)
 			//konfigurer lys
@@ -323,11 +355,12 @@ func door_open_event(reset_power_loss_timer_ch chan<- bool) {
 		check_for_extra_stop()
 		update_direction()
 		elevio.SetMotorDirection(elevator.Dir)
-		if elevator.Dir != elevio.MD_Stop {
+		if elevator.Dir != elevio.MD_Stop{
 			elevator.State = MOVING
-			go func() { reset_power_loss_timer_ch <- true }()
+			go func(){reset_power_loss_timer_ch<- true}()
 		}
 	}
+	backup.UpdateBackup(intern_order_list, elevator.Destination)
 }
 
 func extern_order_event(order elevio.ButtonEvent, reset_timer_ch chan<- bool, reset_power_loss_timer_ch chan<- bool) {
@@ -335,6 +368,7 @@ func extern_order_event(order elevio.ButtonEvent, reset_timer_ch chan<- bool, re
 	case IDLE:
 		if order.Floor == elevator.Last_known_floor {
 			elevator.Destination = order
+			clear_all_order_on_floor(order.Floor)
 			open_door()
 			reset_timer_ch <- true
 		} else {
@@ -348,7 +382,6 @@ func extern_order_event(order elevio.ButtonEvent, reset_timer_ch chan<- bool, re
 				elevator.State = MOVING
 				go func() { reset_power_loss_timer_ch <- true }()
 			}
-
 		}
 	case MOVING:
 		elevio.SetButtonLamp(order.Button, order.Floor, true)

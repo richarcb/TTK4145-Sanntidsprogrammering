@@ -3,12 +3,13 @@ package control
 import (
 	config "../Config"
 	"../FSM"
-	sync "../Synchronizing"
+	synchronize "../Synchronizing"
 	"../driver/elevio"
 	//"fmt"
+	"sync"
 )
 
-//var outgoing_msg sync.Msg_struct
+//var outgoing_msg synchronize.Msg_struct
 
 /*
 type Elevator struct {
@@ -20,6 +21,8 @@ type Elevator struct {
 	ID 							 int
 }
 */
+var _mtx sync.Mutex
+
 var elevID string
 
 //var offline_elev_list [config.N_elevators]bool
@@ -32,15 +35,16 @@ type elevator_states struct {
 	Dir              elevio.MotorDirection
 	State            FSM.ElevState
 	queue            [2][config.N_floors]int
+	//elev_number			 int
 }
 
 type elevator_list map[string]*elevator_states
 
 var elev_list elevator_list
 
-var outgoing_msg sync.Msg_struct
+var outgoing_msg synchronize.Msg_struct
 
-func Init_variables(init_ID_ch <-chan string, init_outgoing_msg_ch chan<- sync.Msg_struct) {
+func Init_variables(init_ID_ch <-chan string, init_outgoing_msg_ch chan<- synchronize.Msg_struct) {
 	select {
 	case ID_string := <-init_ID_ch:
 		elevID = ID_string
@@ -59,7 +63,7 @@ func Init_variables(init_ID_ch <-chan string, init_outgoing_msg_ch chan<- sync.M
 		}
 		elev_list = make(map[string]*elevator_states)
 		elev_list[ID_string] = &elevator_states{Destination: FSM.Empty_order, Last_known_floor: -1, Dir: elevio.MD_Stop, State: FSM.IDLE, queue: empty_queue}
-		outgoing_msg = sync.Msg_struct{Destination: FSM.Empty_order, Last_known_floor: -1, Dir: elevio.MD_Stop, State: FSM.IDLE, Ack_list: empty_ack_list, ID: ID_string}
+		outgoing_msg = synchronize.Msg_struct{Destination: FSM.Empty_order, Last_known_floor: -1, Dir: elevio.MD_Stop, State: FSM.IDLE, Ack_list: empty_ack_list, ID: ID_string}
 		go func() { init_outgoing_msg_ch <- outgoing_msg }()
 	}
 	/*
@@ -98,31 +102,37 @@ func set_value_in_ack_list(value int, order elevio.ButtonEvent) {
 
 func update_local_elevator_struct(elevator FSM.Elevator) {
 	//Updates its own elevator_struct
-
+	_mtx.Lock()
+	defer _mtx.Unlock()
 	(*elev_list[elevID]).Destination = elevator.Destination
 	(*elev_list[elevID]).Last_known_floor = elevator.Last_known_floor
 	(*elev_list[elevID]).State = elevator.State
 	(*elev_list[elevID]).Dir = elevator.Dir
+	//(*elev_list[elevID]).elev_number = config.ElevatorNumber
 }
 
 func update_outgoing_msg(elevator FSM.Elevator) {
+	_mtx.Lock()
+	defer _mtx.Unlock()
 	outgoing_msg.Destination = elevator.Destination
 	outgoing_msg.Last_known_floor = elevator.Last_known_floor
 	outgoing_msg.State = elevator.State
 	outgoing_msg.Dir = elevator.Dir
 }
 
-func update_extern_elevator_struct(elevator sync.Msg_struct) {
+func update_extern_elevator_struct(elevator synchronize.Msg_struct) {
 	//Update elevator_struct from msg!
 	if elev_list[elevator.ID] == nil {
 		return
 	}
+	_mtx.Lock()
+	defer _mtx.Unlock()
 	(*elev_list[elevator.ID]).Destination = elevator.Destination
 	(*elev_list[elevator.ID]).Last_known_floor = elevator.Last_known_floor
 	(*elev_list[elevator.ID]).State = elevator.State
 	(*elev_list[elevator.ID]).Dir = elevator.Dir
+	//(*elev_list[elevator.ID]).elev_number = elevator.Elev_number
 }
-
 func cost_function(id string, order elevio.ButtonEvent) int {
 	cost := 0
 

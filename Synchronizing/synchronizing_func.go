@@ -26,6 +26,7 @@ type Msg_struct struct {
 	State            FSM.ElevState
 	ID               string
 	Ack_list				 [2][config.N_floors]int
+	//Elev_number 		 int
 }
 
 var outgoing_msg Msg_struct

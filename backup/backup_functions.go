@@ -4,12 +4,11 @@ package backup
 
 import (
 	"fmt"
-	"io"
 	"os"
 
 	//"time"
 	"bufio"
-
+	"../driver/elevio"
 	config "../Config"
 )
 
@@ -17,7 +16,6 @@ var path = "./text.txt"
 
 /*
 func main(){ //testing functions
-
 	var array [config.N_floors]int
 	array[0] =1
 	array[2] =1
@@ -27,43 +25,11 @@ func main(){ //testing functions
 }
 //*/
 
-func UpdateBackup(orders [config.N_floors]int) { //CreateBackup
-	deleteFile()
-	createFile()
-	writeToFile(orders)
-}
-
-func ReadFromBackup() [config.N_floors]int { //fixed version
-	var orders [config.N_floors]int
-	f, err := os.OpenFile(path, os.O_RDWR, 0666)
-	if err != nil {
-		panic(err)
+func UpdateBackup(orders [config.N_floors]int, dest elevio.ButtonEvent) { //CreateBackup
+	if dest.Button == elevio.BT_Cab{
+		orders[dest.Floor] = 1
 	}
-	defer f.Close()
-
-	i := 0
-	k := 0
-	for {
-		n, err := fmt.Fscanln(f, &i)
-		if n == 1 {
-			orders[k] = i
-			//fmt.Println(i)
-			fmt.Printf("%#v", orders[k])
-			k++
-		}
-		if err != nil {
-			fmt.Println(err)
-			return orders
-		}
-	}
-	return orders
-}
-
-//_______________________Help functions_____________________________//
-
-func writeToFile(orders [config.N_floors]int) {
-
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		panic(err)
 	}
@@ -79,96 +45,45 @@ func writeToFile(orders [config.N_floors]int) {
 		//fmt.Println("write", orders[i])
 		//time.Sleep(500 * time.Millisecond)
 	}
+	PrintBackup()
 }
 
-func createFile() {
-	// detect if file exists
-	var _, err = os.Stat(path)
-
-	// create file if not exists
-	if os.IsNotExist(err) {
-		var file, err = os.Create(path)
-		if isError(err) {
-			return
+func BackupExists() bool {
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			return false
 		}
-		defer file.Close()
 	}
-
-	fmt.Println("==> done creating file", path)
+	return true
 }
 
-func deleteFile() {
-	// delete file
-	var err = os.Remove(path)
-	if isError(err) {
-		return
-	}
-
-	fmt.Println("==> done deleting file")
-}
-
-func isError(err error) bool {
+func ReadFromBackup() [4]int { //fixed version
+	var orders [4]int
+	f, err := os.OpenFile(path, os.O_RDWR, 0666)
 	if err != nil {
-		fmt.Println(err.Error())
+		panic(err)
 	}
+	defer f.Close()
 
-	return (err != nil)
-}
-
-//UNUSED
-func writeFile() {
-	// open file using READ & WRITE permission
-	var file, err = os.OpenFile(path, os.O_RDWR, 0644)
-	if isError(err) {
-		return
-	}
-	defer file.Close()
-
-	// write some text line-by-line to file
-	_, err = file.WriteString("halo\n")
-	if isError(err) {
-		return
-	}
-	_, err = file.WriteString("mari belajar golang\n")
-	if isError(err) {
-		return
-	}
-
-	// save changes
-	err = file.Sync()
-	if isError(err) {
-		return
-	}
-
-	fmt.Println("==> done writing to file")
-}
-
-//UNUSED
-func readFile() {
-	// re-open file
-	var file, err = os.OpenFile(path, os.O_RDWR, 0644)
-	if isError(err) {
-		return
-	}
-	defer file.Close()
-
-	// read file, line by line
-	var text = make([]byte, 1024)
+	i := 0
+	k := 0
 	for {
-		_, err = file.Read(text)
-
-		// break if finally arrived at end of file
-		if err == io.EOF {
-			break
+		n, err := fmt.Fscanln(f, &i)
+		if n == 1 {
+			orders[k] = i
+			//fmt.Println(i)
+			//fmt.Printf("%#v", orders[k])
+			k++
 		}
-
-		// break if error occured
-		if err != nil && err != io.EOF {
-			isError(err)
-			break
+		if err != nil {
+			fmt.Println(err)
+			return orders
 		}
 	}
+	return orders
+}
 
-	fmt.Println("==> done reading from file")
-	fmt.Println(string(text))
+func PrintBackup() {
+	fmt.Printf("Backup: %v", ReadFromBackup())
+	fmt.Printf("\n")
 }
