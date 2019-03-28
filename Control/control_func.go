@@ -7,6 +7,7 @@ import (
 	"../driver/elevio"
 	//"fmt"
 	"sync"
+	"sort"
 )
 
 //var outgoing_msg synchronize.Msg_struct
@@ -158,7 +159,7 @@ func cost_function(id string, order elevio.ButtonEvent) int {
 			cost -= 10
 		}
 	} else { //Order is down                                                                                                              //config.N_floors-2 since the first down button is in the second floor!
-		if elev_list[id].Last_known_floor > order.Floor && elev_list[id].Destination.Floor < order.Floor { //going down and floor is between orders:Needs to check MOVING since no destination 0-1<order.Floor
+		if elev_list[id].Last_known_floor > order.Floor && elev_list[id].Destination.Floor < order.Floor && (*elev_list[id]).Destination.Floor != FSM.Empty_order.Floor{ //going down and floor is between orders:Needs to check MOVING since no destination 0-1<order.Floor
 			cost -= 10
 		}
 	}
@@ -184,12 +185,17 @@ func add_order_to_elevlist(assigned_id string, order elevio.ButtonEvent) {
 
 func getLowestCostElevatorID(order elevio.ButtonEvent) string {
 	lowestCost := config.N_floors
-	assignedID := elevID
+	assignedID := ""
 	//Get Number_of_Online_elevators! (POWERLOSS???)
+	var keys []string
+	for k:= range elev_list{
+		keys = append(keys,k)
+	}
+	sort.Strings(keys)
 
-	for k := range elev_list {
+	for i:=0; i<len(keys);i++ {
 		//fmt.Println(k)
-		cost := cost_function(k, order)
+		cost := cost_function(keys[i], order)
 		/*
 			fmt.Println("COST:")
 			fmt.Println(cost)
@@ -197,7 +203,7 @@ func getLowestCostElevatorID(order elevio.ButtonEvent) string {
 		*/
 		if cost < lowestCost {
 			lowestCost = cost
-			assignedID = k
+			assignedID = keys[i]
 		}
 	}
 	return assignedID
