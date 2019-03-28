@@ -142,7 +142,10 @@ case inc_msg := <-update_elev_list:
 						}
 					}
 				}
-				delete(elev_list, lost_peers[i])
+				if lost_peers[i] != elevID{
+					delete(elev_list, lost_peers[i])
+				}
+
 			}
 			if len(elev_list) == 1 {
 				single_mode = true

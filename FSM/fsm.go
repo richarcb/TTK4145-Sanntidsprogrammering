@@ -29,7 +29,7 @@ func Fsm(clear_lights_and_extern_orders_ch <-chan int, start_floor int, cancel_i
 			fsm_print()
 			go func() { state_ch <- elevator }()
 		case floor := <-floors_ch:
-			fmt.Println("INIT")
+			elevio.SetFloorIndicator(floor)
 			floor_event(floor, reset_timer_ch, stop_power_loss_timer_ch, reset_power_loss_timer_ch)
 			fsm_print()
 			go func() { state_ch <- elevator }()
