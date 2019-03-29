@@ -3,3 +3,7 @@ Set floor indicators
 //backup
 lik cost
 Test FAT
+
+
+function names --> case sensitive
+channel struct ->
