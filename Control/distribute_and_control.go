@@ -65,7 +65,7 @@ case inc_msg := <-update_elev_list:
 						}
 						order := elevio.ButtonEvent{Button: bt_type, Floor: j}
 						assignedID := getLowestCostElevatorID(order)
-						fmt.Println(assignedID)
+						//fmt.Println(assignedID)
 						add_order_to_elevlist(assignedID, order)
 						//fmt.Println(assignedID)
 						//fmt.Println(elevID)
@@ -87,7 +87,7 @@ case inc_msg := <-update_elev_list:
 						}
 						order := elevio.ButtonEvent{Button: bt_type, Floor: j}
 						assignedID := getLowestCostElevatorID(order)
-						fmt.Println(assignedID)
+						//fmt.Println(assignedID)
 						//fmt.Println(assignedID)
 						/*fmt.Println((*elev_list[elevID]).queue)
 						fmt.Println((*elev_list[inc_msg.ID]).queue)*/
@@ -107,7 +107,7 @@ case inc_msg := <-update_elev_list:
 						}
 						order := elevio.ButtonEvent{Button: bt_type, Floor: j}
 						assignedID := getLowestCostElevatorID(order)
-						fmt.Println(assignedID)
+						//fmt.Println(assignedID)
 						if assignedID == inc_msg.ID {
 							outgoing_msg.Ack_list[i][j] = 0
 							add_order_to_elevlist(assignedID, order)

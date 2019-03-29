@@ -4,7 +4,7 @@ package FSM
 import (
 	//config "../Config"
 	"../driver/elevio"
-	"fmt"
+	//"fmt"
 )
 
 // STATE MACHINE //
