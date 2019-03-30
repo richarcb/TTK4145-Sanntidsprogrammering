@@ -1,36 +1,17 @@
 package main
 
 import (
-	//"control"
-	//linux
-	/*
-	   "./driver/elevio"
-	   "./FSM"
-	   "./Control"
-	*/
-	//Windows
-	//"elevator_project/network/peers"
 	"flag"
 	"fmt"
 	"os"
-
 	"./network/bcast"
 	"./network/localip"
 	"./network/peers"
-
-	config "./Config"
-	control "./Control"
-	"./FSM"
-	//"os"
-	sync "./Synchronizing"
+. "./config"
+	"./control"
+	"./fsm"
+	"./synchronise"
 	"./driver/elevio"
-	//"math/rand"
-	//"sync"
-	// "Network-go-master/network/bcast"
-	//"Network-go-master/network/peers"
-	//"fmt"
-	//"time"
-	//"strconv"
 )
 
 func main() {
@@ -52,16 +33,16 @@ func main() {
 		}
 		id = fmt.Sprintf("peer-%s-%d", localIP, os.Getpid())
 	}
-	init_outgoing_msg_ch:=make(chan sync.Msg_struct)
-	init_ID_ch:=make(chan string,1)
+	init_outgoing_msg_ch:= make(chan Msg_struct)
+	init_ID_ch:= make(chan string,1)
 
 	go control.Init_variables(init_ID_ch, init_outgoing_msg_ch)
 	init_ID_ch<-id
 
 
 //15657
-	elevio.Init("localhost:"+port, config.N_floors)
-	FSM.Init_mem()
+	elevio.Init("localhost:"+port, N_floors)
+	fsm.Init_mem()
 	start_floor := elevio.InitElev()
 
 
@@ -76,15 +57,16 @@ func main() {
 	//UDPmsgRx := make(chan FSM.Elevator)
 
 	//FSM
-	cancel_illuminate_extern_order_ch := make(chan int)
-	illuminate_extern_order_ch := make(chan elevio.ButtonEvent)
-	extern_order_ch := make(chan elevio.ButtonEvent)
-	buttons_ch := make(chan elevio.ButtonEvent)
-	floors_ch := make(chan int)
-	reached_extern_floor_ch := make(chan elevio.ButtonEvent)
-	new_order_ch := make(chan elevio.ButtonEvent)
-	state_ch := make(chan FSM.Elevator)
-
+	fsmCh := fsm.FsmChannels{
+				Cancel_illuminate_extern_order_ch: make(chan int),
+				Illuminate_extern_order_ch: make(chan elevio.ButtonEvent),
+				Extern_order_ch: make(chan elevio.ButtonEvent),
+				Buttons_ch: make(chan elevio.ButtonEvent),
+				Floors_ch: make(chan int),
+				Reached_extern_floor_ch: make(chan elevio.ButtonEvent),
+				New_order_ch: make(chan elevio.ButtonEvent),
+				State_ch: make(chan Elevator),
+				}
 	/*
 	   outgoing_msg_ch := make(chan sync.Msg_struct)
 	   incoming_msg_ch := make(chan sync.Msg_struct)
@@ -97,36 +79,37 @@ func main() {
 	//power_loss_ch  := make(chan bool)
 
 	//Distribute_and_control channes:
-	reset_received_order_ch := make(chan bool)
-	update_outgoing_msg_ch := make(chan sync.Msg_struct)
-	update_elev_list := make(chan sync.Msg_struct)
-	lost_peers_ch := make(chan []string)
-	new_peer_ch := make(chan string)
-	outgoing_msg_ch := make(chan sync.Msg_struct)
-	incoming_msg_ch := make(chan sync.Msg_struct)
-	peer_trans_en_ch := make(chan bool)
-	peer_update_ch := make(chan peers.PeerUpdate)
+	ctrlCh := control.ControlChannels{
+				Reset_received_order_ch : make(chan bool),
+				Update_outgoing_msg_ch : make(chan Msg_struct),
+				Update_elev_list_ch : make(chan Msg_struct),
+				Lost_peers_ch : make(chan []string),
+				New_peer_ch : make(chan string),
+				Outgoing_msg_ch : make(chan Msg_struct),
+				Incoming_msg_ch : make(chan Msg_struct),
+				Peer_trans_en_ch : make(chan bool),
+				Peer_update_ch : make(chan peers.PeerUpdate),
+				Clear_lights_and_extern_orders_ch :make(chan int),
+	}
 
-	clear_lights_and_extern_orders_ch:= make(chan int)
+//ROUTINES
 
-
-
-	go elevio.PollButtons(buttons_ch)
-	go elevio.PollFloorSensor(floors_ch)
+	go elevio.PollButtons(fsmCh.Buttons_ch)
+	go elevio.PollFloorSensor(fsmCh.Floors_ch)
 	//go elevio.PollObstructionSwitch(drv_obstr)
 	//go elevio.PollStopButton(drv_stop)
 
-	go control.Distribute_and_control(clear_lights_and_extern_orders_ch, cancel_illuminate_extern_order_ch, illuminate_extern_order_ch,reset_received_order_ch, update_outgoing_msg_ch, update_elev_list, lost_peers_ch, new_peer_ch, new_order_ch, state_ch, extern_order_ch)
-	go FSM.Fsm(clear_lights_and_extern_orders_ch, start_floor, cancel_illuminate_extern_order_ch, illuminate_extern_order_ch, extern_order_ch, buttons_ch, floors_ch, reached_extern_floor_ch, new_order_ch, state_ch)
-	go sync.Synchronizing(init_outgoing_msg_ch, reset_received_order_ch, update_outgoing_msg_ch, outgoing_msg_ch, incoming_msg_ch, update_elev_list, peer_update_ch, peer_trans_en_ch, lost_peers_ch, new_peer_ch)
+	go control.Distribute_and_control(fsmCh, ctrlCh)
+	go fsm.EventHandler(fsmCh, start_floor, ctrlCh.Clear_lights_and_extern_orders_ch)
+	go sync.Synchronizing(init_outgoing_msg_ch, fsmCh, ctrlCh)
 
 
 
 	//Synchronize
-	go bcast.Transmitter(12345, outgoing_msg_ch)
-	go bcast.Receiver(12345, incoming_msg_ch)
-	go peers.Transmitter(15647, id, peer_trans_en_ch)
-	go peers.Receiver(15647, peer_update_ch)
+	go bcast.Transmitter(12345, ctrlCh.Outgoing_msg_ch)
+	go bcast.Receiver(12345, ctrlCh.Incoming_msg_ch)
+	go peers.Transmitter(15647, id, ctrlCh.Peer_trans_en_ch)
+	go peers.Receiver(15647, ctrlCh.Peer_update_ch)
 	//go sync.TransmitMsg(outgoing_msg_ch)
 	//go sync.ReceiveMsg(incoming_msg_ch)
 

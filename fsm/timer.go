@@ -1,4 +1,4 @@
-package FSM
+package fsm
 
 import (
 	"time"

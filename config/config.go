@@ -6,6 +6,10 @@ import "os"
 import "strconv"
 */
 
+import(
+
+	"../driver/elevio"
+)
 
 
 
@@ -17,32 +21,30 @@ const (
 	//Local variables
 )
 var ElevatorNumber int
-/*
-func Init_elevconfig(){
-	ElevatorString := os.Args[2]
-	ElevatorNumber, _ = strconv.Atoi(ElevatorString)
-}*/
+
+type Elevator struct {
+	//Destination floor
+	Destination      elevio.ButtonEvent
+	Last_known_floor int
+	Dir              elevio.MotorDirection
+	State            ElevState
+}
+
+type ElevState int
+
+const (
+	IDLE     ElevState = 0
+	MOVING             = 1
+	DOOROPEN           = 2
+	POWERLOSS					 = 3
+)
 
 
-/*
 type Msg_struct struct {
-	//Destination floor
 	Destination      elevio.ButtonEvent
 	Last_known_floor int
 	Dir              elevio.MotorDirection
-	State            FSM.ElevState
-	ID               int
-	Ack_list				 [N_elevators][N_floors]int
-	//IP 							 string
+	State            ElevState
+	ID               string
+	Ack_list				 [2][N_floors]int
 }
-
-type elevator_states struct {
-	//Destination floor
-	Destination      elevio.ButtonEvent
-	Last_known_floor int
-	Dir              elevio.MotorDirection
-	State            FSM.ElevState
-	ID				 			 int
-	queue            [2][ N_floors]int
-}
-*/

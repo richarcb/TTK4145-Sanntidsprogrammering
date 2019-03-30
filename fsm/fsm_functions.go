@@ -1,21 +1,11 @@
-package FSM
+package fsm
 
 import (
-	//windows:
-	//"container/list"
-	//"driver/elevio"
 	"fmt"
-
 	"../driver/elevio"
-	//"../backup"
-	//linux:
-
-	config "../Config"
+. "../config"
 	"../backup"
-	/*
-		"fmt"
-		"../driver/elevio"
-	*/)
+)
 
 //Function that removes middle element from queue:
 //Linked list, not queue! Can perhaps remove elements from middel of list!
@@ -231,7 +221,7 @@ func button_event(button_pushed elevio.ButtonEvent, new_order_ch chan<- elevio.B
 			/*fmt.Printf("opendoor")
 			timerReset <- true*/
 		}
-		backup.UpdateBackup(intern_order_list, elevator.Destination) //New backup.
+		backup.Update_backup(intern_order_list, elevator.Destination) //New backup.
 	} else if button_pushed.Floor == elevator.Last_known_floor && elevator.State != MOVING {
 		open_door()
 		reset_timer_ch <- true
@@ -272,7 +262,7 @@ func power_loss_event(stop_power_loss_timer_ch chan<- bool) {
 	//QUICK // FIX
 	if elevator.State == MOVING{
 		elevator.State = POWERLOSS
-		for i := 0; i < config.N_floors; i++ {
+		for i := 0; i < N_floors; i++ {
 			clear_all_order_on_floor(i)
 		}
 	}else{
@@ -360,7 +350,7 @@ func door_open_event(reset_power_loss_timer_ch chan<- bool) {
 			go func(){reset_power_loss_timer_ch<- true}()
 		}
 	}
-	backup.UpdateBackup(intern_order_list, elevator.Destination)
+	backup.Update_backup(intern_order_list, elevator.Destination)
 }
 
 func extern_order_event(order elevio.ButtonEvent, reset_timer_ch chan<- bool, reset_power_loss_timer_ch chan<- bool) {
@@ -403,19 +393,11 @@ func extern_order_event(order elevio.ButtonEvent, reset_timer_ch chan<- bool, re
 }
 
 func fsm_print() {
-
-	fmt.Printf("-----------NEW UPDATE -----------\n")
+	fmt.Printf("-----------NEW UPDATE ----------\n")
 	fmt.Printf("State: %#v\n", elevator.State)
 	fmt.Printf("Floor: %#v\n", elevator.Last_known_floor)
 	fmt.Printf("Direction: %#v\n", elevator.Dir)
 	fmt.Printf("Extra_stop: %#v\n", extra_stop.Floor)
 	fmt.Printf("Destination: %#v\n", elevator.Destination.Floor)
-	/*fmt.Printf("Orders: \n")
-	/*for i:=0; i<len(queue); i++{
-		fmt.Printf("%#v", queue[i].Floorr
-	}
-	for i:=0; i<len(intern_order_list);i++{
-		fmt.Printf("%#v\n", intern_order_list[i])
-	}*/
 	return
 }

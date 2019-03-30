@@ -5,27 +5,14 @@ package backup
 import (
 	"fmt"
 	"os"
-
-	//"time"
 	"bufio"
 	"../driver/elevio"
-	config "../Config"
+  "../config"
 )
 
-var path = "./text.txt"
+var path = "./backup.txt"
 
-/*
-func main(){ //testing functions
-	var array [config.N_floors]int
-	array[0] =1
-	array[2] =1
-	UpdateBackup(array) //testing for button_event
-	//array = ReadFromBackup() //testing for Init_mem
-	fmt.Println(array)
-}
-//*/
-
-func UpdateBackup(orders [config.N_floors]int, dest elevio.ButtonEvent) { //CreateBackup
+func Update_backup(orders [config.N_floors]int, dest elevio.ButtonEvent) { //CreateBackup
 	if dest.Button == elevio.BT_Cab{
 		orders[dest.Floor] = 1
 	}
