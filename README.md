@@ -1,8 +1,6 @@
 # Elevator Project TTK4145
 
-Project written by Ruben Kleiven, Stine Åkredalen and Richard Che Bui
-
-Written in golang.
+Real time programming, written in golang.
 
 
 Terminal commands:
