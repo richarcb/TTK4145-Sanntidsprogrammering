@@ -4,14 +4,26 @@ import (
 	"../driver/elevio"
 . "../config"
 	"../backup"
-	
+
 )
+//MEMORY START
+
 var extra_stop Order
 var Empty_order Order
+
+//External elevator queue
 var queue [N_floors * 2]Order //Creates empty queue (Should be Linked list)
+
+//Local elevator queue
 var intern_order_list [N_floors]int
+
+//Local elevator variable
 var elevator Elevator
 
+//MEMORY END
+
+
+//Initializes elevator's memory. Memory is defined above
 func Init_mem() {
 	Empty_order.Floor = -1
 	Empty_order.Button = BT_No_call

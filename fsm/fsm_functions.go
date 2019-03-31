@@ -17,6 +17,8 @@ func remove_elem(index int) {
 		}
 	}
 }
+
+//Inserts element in the front of queue
 func insert_front(front_elem Order) {
 
 	for i := len(queue) - 1; i > 0; i-- {
@@ -25,6 +27,8 @@ func insert_front(front_elem Order) {
 	queue[0] = front_elem
 }
 
+
+//Adds order in queue
 func push_back(elem Order) {
 	for i := 0; i < len(queue); i++ {
 		if queue[i].Floor == elem.Floor && queue[i].Button == elem.Button {
@@ -37,8 +41,8 @@ func push_back(elem Order) {
 	}
 }
 
+//Checks if elevator should stop on their way to destination
 func check_for_extra_stop() {
-
 	extra_stop = Empty_order
 
 	switch elevator.Dir {
@@ -104,6 +108,7 @@ func check_for_extra_stop() {
 	}
 }
 
+//Checks for new destination
 func find_new_destination(priority bool) {
 	//Could add priorityvariable to get better features... NOW: Just chosing the lowest intern order first...
 	if elevator.State == MOVING {
@@ -139,11 +144,14 @@ func find_new_destination(priority bool) {
 	elevator.Destination = new_dest
 }
 
+//Closes door after Dooropen state
 func close_door() {
 	elevio.SetDoorOpenLamp(false)
 	elevator.State = IDLE
 }
 
+
+//Sets state to Dooropen
 func open_door() { //On floor, doors open
 	if elevator.Dir != MD_Stop {
 		return
@@ -153,6 +161,7 @@ func open_door() { //On floor, doors open
 	//start timer
 }
 
+//Checks if direction should be updated depending on current orders
 func update_direction() {
 	//Never called whene
 	if extra_stop.Floor == elevator.Last_known_floor || elevator.Destination.Floor == elevator.Last_known_floor {
@@ -166,6 +175,8 @@ func update_direction() {
 	}
 }
 
+
+//Sets the elevator's motor
 func drive() { //Drive
 	if elevator.State == DOOROPEN {
 		return
@@ -173,6 +184,7 @@ func drive() { //Drive
 	elevio.SetMotorDirection(elevator.Dir)
 }
 
+//Finite state machine event for button event
 func button_event(button_pushed Order, new_order_ch chan<- Order, reset_timer_ch chan<- bool, reset_power_loss_timer_ch chan<- bool) {
 	if button_pushed.Button == BT_Cab {
 		switch elevator.State {
@@ -230,11 +242,15 @@ func button_event(button_pushed Order, new_order_ch chan<- Order, reset_timer_ch
 		go func() { new_order_ch <- new_order }()
 	}
 }
+
+//Clears lights
 func clear_extern_ligts_on_floor(floor int) {
 	for i := BT_HallUp; i <= BT_HallDown; i++ {
 		elevio.SetButtonLamp(i, floor, false)
 	}
 }
+
+//Clears orders on selected floor
 func clear_extern_order_on_floor(floor int) {
 	for i := 0; i < len(queue); i++ {
 		if queue[i].Floor == floor {
@@ -243,12 +259,14 @@ func clear_extern_order_on_floor(floor int) {
 	}
 }
 
+//Clears lights at selected floor
 func clear_all_lights_on_floor(floor int) {
 	for i := BT_HallUp; i <= BT_Cab; i++ {
 		elevio.SetButtonLamp(i, floor, false)
 	}
 }
 
+//Clears all types of orders on floors
 func clear_all_order_on_floor(floor int) {
 	intern_order_list[floor] = 0
 	for i := 0; i < len(queue); i++ {
@@ -258,6 +276,7 @@ func clear_all_order_on_floor(floor int) {
 	}
 }
 
+//Finite state machine event for powerloss
 func power_loss_event(stop_power_loss_timer_ch chan<- bool) {
 	//QUICK // FIX
 	if elevator.State == MOVING{
@@ -271,6 +290,7 @@ func power_loss_event(stop_power_loss_timer_ch chan<- bool) {
 
 }
 
+//Finite state machine event for floor sensor event
 func floor_event(floor int, reset_timer_ch chan<- bool, stop_power_loss_timer_ch chan<- bool, reset_power_loss_timer_ch chan<- bool) {
 	elevator.Last_known_floor = floor
 
@@ -330,6 +350,7 @@ func floor_event(floor int, reset_timer_ch chan<- bool, stop_power_loss_timer_ch
 	}
 }
 
+//Finite state machine event for opening door event
 func door_open_event(reset_power_loss_timer_ch chan<- bool) {
 	switch elevator.State {
 	case DOOROPEN:
@@ -353,6 +374,7 @@ func door_open_event(reset_power_loss_timer_ch chan<- bool) {
 	backup.Update_backup(intern_order_list, elevator.Destination)
 }
 
+//Finite state machine for getting an external order from the network
 func extern_order_event(order Order, reset_timer_ch chan<- bool, reset_power_loss_timer_ch chan<- bool) {
 	switch elevator.State {
 	case IDLE:
@@ -392,6 +414,7 @@ func extern_order_event(order Order, reset_timer_ch chan<- bool, reset_power_los
 	}
 }
 
+//Prints current states
 func fsm_print() {
 	fmt.Printf("-----------NEW UPDATE ----------\n")
 	fmt.Printf("State: %#v\n", elevator.State)

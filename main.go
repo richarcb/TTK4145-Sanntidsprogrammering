@@ -13,17 +13,13 @@ import (
 	com "./network/communication"
 	"./driver/elevio"
 )
-
+//Initializes elevator's IP config
 func initialize_elevator_system() (int,string){
 	port := os.Args[1]
 	var id string
 	flag.StringVar(&id, "id", "", "id of this peer")
 	flag.Parse()
 
-	// ... or alternatively, we can use the local IP address.
-	// (But since we can run multiple programs on the same PC, we also append the
-	//  process ID)
-//
 	if id == "" {
 		localIP, err := localip.LocalIP()
 		if err != nil {
@@ -40,7 +36,7 @@ func initialize_elevator_system() (int,string){
 	init_ID_ch<-id
 
 
-//15657
+//15657 --> default simulator port
 	elevio.Init("localhost:"+port, N_floors)
 	fsm.Init_mem()
  	return elevio.InitElev(),id
@@ -50,37 +46,41 @@ func initialize_elevator_system() (int,string){
 func main() {
 	start_floor,id := initialize_elevator_system()
 
-	//channels
+	//Local fsm channels
 	fsm_ch := fsm.Fsm_channels{
-				Clear_lights_and_extern_orders_ch: make(chan int),
-				Illuminate_extern_order_ch: make(chan Order),
-				Extern_order_ch: make(chan Order),
-				Buttons_ch: make(chan Order),
-				Floors_ch: make(chan int),
-				New_order_ch: make(chan Order),
-				State_ch: make(chan Elevator)}
+		Clear_lights_and_extern_orders_ch: 	make(chan int),
+		Illuminate_extern_order_ch:					make(chan Order),
+		Extern_order_ch: 										make(chan Order),
+		Buttons_ch: 												make(chan Order),
+		Floors_ch: 													make(chan int),
+		New_order_ch: 											make(chan Order),
+		State_ch: 													make(chan Elevator)}
 
+	//Network communication channels
 	com_ch := com.Communication_channels{
-		Init_outgoing_msg_ch: make(chan Msg_struct),
-		Update_outgoing_msg_ch : make(chan Msg_struct),
-		Update_control_variables_ch : make(chan Msg_struct),
-		Lost_peers_ch : make(chan []string),
-		New_peer_ch : make(chan string),
-		Outgoing_msg_ch : make(chan Msg_struct),
-		Incoming_msg_ch : make(chan Msg_struct),
-		Peer_update_ch : make(chan peers.PeerUpdate)}
+		Init_outgoing_msg_ch:  							make(chan Msg_struct),
+		Update_outgoing_msg_ch:							make(chan Msg_struct),
+		Update_control_variables_ch:				make(chan Msg_struct),
+		Lost_peers_ch:											make(chan []string),
+		New_peer_ch: 												make(chan string),
+		Outgoing_msg_ch:										make(chan Msg_struct),
+		Incoming_msg_ch:  									make(chan Msg_struct),
+		Peer_update_ch: 										make(chan peers.PeerUpdate)}
 
 		peer_trans_en_ch:= make(chan bool)
 
-//Go Routines
+		//GO ROUTINES
 
+//Driver sensors
 	go elevio.PollButtons(fsm_ch.Buttons_ch)
 	go elevio.PollFloorSensor(fsm_ch.Floors_ch)
 
+//Elevator routines
 	go control.Control(com_ch.Update_outgoing_msg_ch, com_ch.New_peer_ch, com_ch.Lost_peers_ch,com_ch.Update_control_variables_ch,fsm_ch.Extern_order_ch, fsm_ch.New_order_ch,fsm_ch.State_ch,fsm_ch.Illuminate_extern_order_ch,fsm_ch.Clear_lights_and_extern_orders_ch)
 	go fsm.EventHandler(fsm_ch, start_floor)
 	go com.Communication(com_ch)
 
+//Transmitters/Receivers
 	go bcast.Transmitter(12345, com_ch.Outgoing_msg_ch)
 	go bcast.Receiver(12345, com_ch.Incoming_msg_ch)
 	go peers.Transmitter(15647, id, peer_trans_en_ch)

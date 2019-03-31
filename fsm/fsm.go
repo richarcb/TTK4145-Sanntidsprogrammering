@@ -27,24 +27,26 @@ func EventHandler(fsm_ch Fsm_channels, start_floor int) {
 	reset_power_loss_timer_ch := make(chan bool)
 	stop_power_loss_timer_ch := make(chan bool)
 
+  //Fsm timers
 	go DoorTimer(door_timer_ch, reset_timer_ch)
 	go Powerloss_timer(power_loss_ch, reset_power_loss_timer_ch, stop_power_loss_timer_ch)
+
 
 	for {
 		select {
 		case button_pushed := <-fsm_ch.Buttons_ch:
 			button_event(button_pushed, fsm_ch.New_order_ch, reset_timer_ch, reset_power_loss_timer_ch)
-			fsm_print()
+			//fsm_print()
 			go func() { fsm_ch.State_ch <- elevator }()
 		case floor := <-fsm_ch.Floors_ch:
 			elevio.SetFloorIndicator(floor)
 			floor_event(floor, reset_timer_ch, stop_power_loss_timer_ch, reset_power_loss_timer_ch)
-			fsm_print()
+			//fsm_print()
 			go func() { fsm_ch.State_ch <- elevator }()
 
 		case <-door_timer_ch:
 			door_open_event(reset_power_loss_timer_ch)
-			fsm_print()
+			//fsm_print()
 			go func() { fsm_ch.State_ch <- elevator }()
 
 		case order := <-fsm_ch.Extern_order_ch:

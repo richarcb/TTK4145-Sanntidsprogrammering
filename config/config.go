@@ -2,7 +2,6 @@
 package config
 
 const (
-	//System variables
 	N_floors    = 4
 	N_elevators = 3
 )
@@ -14,7 +13,6 @@ type Order struct {
 }
 
 type MotorDirection int
-
 const (
 	MD_Up   MotorDirection = 1
 	MD_Down                = -1
@@ -22,16 +20,14 @@ const (
 )
 
 type ButtonType int
-
 const (
-	//Swapped BT_Cab and BT_HallUp
 	BT_HallUp   ButtonType = 0
 	BT_HallDown           = 1
 	BT_Cab         			= 2
-	//Empty buttinevent (No order)
 	BT_No_call 					= -1
 )
 
+//Local Elevator struct
 type Elevator struct {
 	Destination      Order
 	Last_known_floor int
@@ -39,8 +35,8 @@ type Elevator struct {
 	State            ElevState
 }
 
-type ElevState int
 
+type ElevState int
 const (
 	IDLE     ElevState = 0
 	MOVING             = 1
@@ -48,7 +44,7 @@ const (
 	POWERLOSS					 = 3
 )
 
-
+//External Elevator struct
 type Msg_struct struct {
 	Destination      Order
 	Last_known_floor int

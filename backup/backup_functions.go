@@ -11,6 +11,7 @@ import (
 
 var path = "./backup.txt"
 
+//Writes the orders array to the backup file text.txt
 func Update_backup(orders [N_floors]int, dest Order) { //CreateBackup
 	if dest.Button == BT_Cab{
 		orders[dest.Floor] = 1
@@ -26,13 +27,12 @@ func Update_backup(orders [N_floors]int, dest Order) { //CreateBackup
 		if err != nil {
 			panic(err)
 		}
-		w.Flush() // Flush writes any buffered data to the underlying io.Writer.
-		f.Sync()  // commit the current contents of the file to stable storage.
-		//fmt.Println("write", orders[i])
-		//time.Sleep(500 * time.Millisecond)
+		w.Flush() 
+		f.Sync()
 	}
 }
 
+//Checks if the backup textfile exists
 func BackupExists() bool {
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
@@ -42,6 +42,7 @@ func BackupExists() bool {
 	return true
 }
 
+//Reads from the current backup file and returns the order in  form [4]int
 func ReadFromBackup() [4]int { //fixed version
 	var orders [4]int
 	f, err := os.OpenFile(path, os.O_RDWR, 0666)
