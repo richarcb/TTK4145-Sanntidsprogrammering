@@ -6,5 +6,5 @@ Written in golang.
 
 
 Terminal commands:
-* go run main.go port=15657
+* go run main.go 15657
 * ./SimElevatorServer --port 15657
