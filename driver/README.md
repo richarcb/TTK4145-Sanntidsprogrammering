@@ -1,3 +1,3 @@
-#Driver
+# Driver
 
-This module contains hardware driver code necessary for communication between elevators at the lab and our written code. The driver code lets us manage the elevator's behaviour.
+This module contains hardware driver code necessary for communication between elevators at the lab and our written code. The driver code lets us manage the elevator's behaviour such as motor direction, lights, etc.
