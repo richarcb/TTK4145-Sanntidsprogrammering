@@ -31,7 +31,6 @@ func Update_backup(orders [N_floors]int, dest Order) { //CreateBackup
 		//fmt.Println("write", orders[i])
 		//time.Sleep(500 * time.Millisecond)
 	}
-	PrintBackup()
 }
 
 func BackupExists() bool {
@@ -52,14 +51,11 @@ func ReadFromBackup() [4]int { //fixed version
 	defer f.Close()
 
 	i := 0
-	k := 0
-	for {
+	for  k:= 0; k<4; k++{
 		n, err := fmt.Fscanln(f, &i)
 		if n == 1 {
 			orders[k] = i
 			//fmt.Println(i)
-			//fmt.Printf("%#v", orders[k])
-			k++
 		}
 		if err != nil {
 			fmt.Println(err)
@@ -67,9 +63,4 @@ func ReadFromBackup() [4]int { //fixed version
 		}
 	}
 	return orders
-}
-
-func PrintBackup() {
-	fmt.Printf("Backup: %v", ReadFromBackup())
-	fmt.Printf("\n")
 }

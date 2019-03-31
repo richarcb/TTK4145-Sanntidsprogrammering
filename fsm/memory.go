@@ -4,7 +4,7 @@ import (
 	"../driver/elevio"
 . "../config"
 	"../backup"
-	"fmt"
+	
 )
 var extra_stop Order
 var Empty_order Order
@@ -23,18 +23,13 @@ func Init_mem() {
 	}
 
 	if backup.BackupExists() {
-		fmt.Printf("BACKUP EXISTS")
 		intern_order_list = backup.ReadFromBackup()
 		for i := 0; i < N_floors; i++ {
 			if intern_order_list[i] == 1 {
-				fmt.Printf("SETTING LIGHTS")
 				elevio.SetButtonLamp(BT_Cab, i, true)
 			}
 		}
 
-	}
-	for i := 0; i < len(intern_order_list); i++ {
-		fmt.Println(intern_order_list[i])
 	}
 	extra_stop = Empty_order
 
