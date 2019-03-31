@@ -14,8 +14,5 @@ This module contains code regarding network and communication between the elevat
 ## Localip
  contains functions used to manage IP addresses such as finding your current IP address.
 
-Conn ensures connection between the elevator driver and our written code
-
-
 ## Communication
  takes care of all network communication between the elevators. It makes sure messages are sent out to the other elevators, and manages incoming ones. The communication module sews together the local fsm and the provided network modules above, making the elevators communicate with eachother.
