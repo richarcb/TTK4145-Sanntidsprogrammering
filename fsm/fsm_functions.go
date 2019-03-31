@@ -17,7 +17,7 @@ func remove_elem(index int) {
 		}
 	}
 }
-func insert_front(front_elem elevio.ButtonEvent) {
+func insert_front(front_elem Order) {
 
 	for i := len(queue) - 1; i > 0; i-- {
 		queue[i] = queue[i-1]
@@ -25,7 +25,7 @@ func insert_front(front_elem elevio.ButtonEvent) {
 	queue[0] = front_elem
 }
 
-func push_back(elem elevio.ButtonEvent) {
+func push_back(elem Order) {
 	for i := 0; i < len(queue); i++ {
 		if queue[i].Floor == elem.Floor && queue[i].Button == elem.Button {
 			return
@@ -42,18 +42,18 @@ func check_for_extra_stop() {
 	extra_stop = Empty_order
 
 	switch elevator.Dir {
-	case elevio.MD_Stop:
+	case MD_Stop:
 		if elevator.Last_known_floor < elevator.Destination.Floor { //UP
 			for i := elevator.Last_known_floor + 1; i < elevator.Destination.Floor; i++ {
 				if intern_order_list[i] == 1 && (i < extra_stop.Floor || extra_stop.Floor == Empty_order.Floor) {
-					extra_stop = elevio.ButtonEvent{Floor: i, Button: elevio.BT_Cab}
+					extra_stop = Order{Floor: i, Button: BT_Cab}
 					break
 				}
 			}
 			for i := 0; i < len(queue); i++ {
 				if queue[i].Floor == Empty_order.Floor {
 					break
-				} else if queue[i].Button == elevio.BT_HallUp && queue[i].Floor > elevator.Last_known_floor && queue[i].Floor < elevator.Destination.Floor {
+				} else if queue[i].Button == BT_HallUp && queue[i].Floor > elevator.Last_known_floor && queue[i].Floor < elevator.Destination.Floor {
 					if extra_stop.Floor == Empty_order.Floor || queue[i].Floor < extra_stop.Floor {
 						extra_stop = queue[i]
 					}
@@ -62,20 +62,20 @@ func check_for_extra_stop() {
 		} else if elevator.Last_known_floor > elevator.Destination.Floor { //Down
 			for i := elevator.Last_known_floor - 1; i > elevator.Destination.Floor; i-- {
 				if intern_order_list[i] == 1 && i > extra_stop.Floor {
-					extra_stop = elevio.ButtonEvent{Floor: i, Button: elevio.BT_Cab}
+					extra_stop = Order{Floor: i, Button: BT_Cab}
 					break
 				}
 			}
 			for i := 0; i < len(queue); i++ {
-				if queue[i].Button == elevio.BT_HallDown && queue[i].Floor > extra_stop.Floor && queue[i].Floor < elevator.Last_known_floor && queue[i].Floor > elevator.Destination.Floor {
+				if queue[i].Button == BT_HallDown && queue[i].Floor > extra_stop.Floor && queue[i].Floor < elevator.Last_known_floor && queue[i].Floor > elevator.Destination.Floor {
 					extra_stop = queue[i]
 				}
 			}
 		}
-	case elevio.MD_Up:
+	case MD_Up:
 		for i := elevator.Last_known_floor + 1; i < elevator.Destination.Floor; i++ {
 			if intern_order_list[i] == 1 && (i < extra_stop.Floor || extra_stop.Floor == Empty_order.Floor) {
-				extra_stop = elevio.ButtonEvent{Floor: i, Button: elevio.BT_Cab}
+				extra_stop = Order{Floor: i, Button: BT_Cab}
 				break
 			}
 		}
@@ -83,21 +83,21 @@ func check_for_extra_stop() {
 			if queue[i].Floor == Empty_order.Floor {
 				break
 			}
-			if queue[i].Button == elevio.BT_HallUp && queue[i].Floor > elevator.Last_known_floor && queue[i].Floor < elevator.Destination.Floor {
+			if queue[i].Button == BT_HallUp && queue[i].Floor > elevator.Last_known_floor && queue[i].Floor < elevator.Destination.Floor {
 				if extra_stop.Floor == Empty_order.Floor || queue[i].Floor < extra_stop.Floor {
 					extra_stop = queue[i]
 				}
 			}
 		}
-	case elevio.MD_Down:
+	case MD_Down:
 		for i := elevator.Last_known_floor - 1; i > elevator.Destination.Floor; i-- {
 			if intern_order_list[i] == 1 && i > extra_stop.Floor {
-				extra_stop = elevio.ButtonEvent{Floor: i, Button: elevio.BT_Cab}
+				extra_stop = Order{Floor: i, Button: BT_Cab}
 				break
 			}
 		}
 		for i := 0; i < len(queue); i++ {
-			if queue[i].Button == elevio.BT_HallDown && queue[i].Floor > extra_stop.Floor && queue[i].Floor < elevator.Last_known_floor && queue[i].Floor > elevator.Destination.Floor {
+			if queue[i].Button == BT_HallDown && queue[i].Floor > extra_stop.Floor && queue[i].Floor < elevator.Last_known_floor && queue[i].Floor > elevator.Destination.Floor {
 				extra_stop = queue[i]
 			}
 		}
@@ -114,7 +114,7 @@ func find_new_destination(priority bool) {
 		for i := len(intern_order_list) - 1; i >= 0; i-- {
 			if intern_order_list[i] == 1 {
 				new_dest.Floor = i
-				new_dest.Button = elevio.BT_Cab
+				new_dest.Button = BT_Cab
 				elevator.Destination = new_dest
 				intern_order_list[i] = 0
 				return
@@ -124,7 +124,7 @@ func find_new_destination(priority bool) {
 		for i := 0; i < len(intern_order_list); i++ {
 			if intern_order_list[i] == 1 {
 				new_dest.Floor = i
-				new_dest.Button = elevio.BT_Cab
+				new_dest.Button = BT_Cab
 				elevator.Destination = new_dest
 				intern_order_list[i] = 0
 				return
@@ -145,7 +145,7 @@ func close_door() {
 }
 
 func open_door() { //On floor, doors open
-	if elevator.Dir != elevio.MD_Stop {
+	if elevator.Dir != MD_Stop {
 		return
 	}
 	elevio.SetDoorOpenLamp(true)
@@ -156,13 +156,13 @@ func open_door() { //On floor, doors open
 func update_direction() {
 	//Never called whene
 	if extra_stop.Floor == elevator.Last_known_floor || elevator.Destination.Floor == elevator.Last_known_floor {
-		elevator.Dir = elevio.MD_Stop
+		elevator.Dir = MD_Stop
 	} else if elevator.Destination.Floor > elevator.Last_known_floor {
-		elevator.Dir = elevio.MD_Up
+		elevator.Dir = MD_Up
 	} else if elevator.Destination.Floor < elevator.Last_known_floor && elevator.Destination.Floor != Empty_order.Floor {
-		elevator.Dir = elevio.MD_Down
+		elevator.Dir = MD_Down
 	} else {
-		elevator.Dir = elevio.MD_Stop
+		elevator.Dir = MD_Stop
 	}
 }
 
@@ -173,8 +173,8 @@ func drive() { //Drive
 	elevio.SetMotorDirection(elevator.Dir)
 }
 
-func button_event(button_pushed elevio.ButtonEvent, new_order_ch chan<- elevio.ButtonEvent, reset_timer_ch chan<- bool, reset_power_loss_timer_ch chan<- bool) {
-	if button_pushed.Button == elevio.BT_Cab {
+func button_event(button_pushed Order, new_order_ch chan<- Order, reset_timer_ch chan<- bool, reset_power_loss_timer_ch chan<- bool) {
+	if button_pushed.Button == BT_Cab {
 		switch elevator.State {
 		case IDLE:
 			fsm_print()
@@ -183,13 +183,13 @@ func button_event(button_pushed elevio.ButtonEvent, new_order_ch chan<- elevio.B
 				open_door()
 				reset_timer_ch <- true
 			} else {
-				elevio.SetButtonLamp(elevio.BT_Cab, button_pushed.Floor, true)
+				elevio.SetButtonLamp(BT_Cab, button_pushed.Floor, true)
 				//Inside order: Add order to intern list, no need for sharing
 				intern_order_list[button_pushed.Floor] = 1
 				find_new_destination(false)
 				update_direction()
 				elevio.SetMotorDirection(elevator.Dir)
-				if elevator.Dir != elevio.MD_Stop {
+				if elevator.Dir != MD_Stop {
 					elevator.State = MOVING
 					go func() { reset_power_loss_timer_ch <- true }()
 				}
@@ -197,7 +197,7 @@ func button_event(button_pushed elevio.ButtonEvent, new_order_ch chan<- elevio.B
 
 		case MOVING:
 			fsm_print()
-			elevio.SetButtonLamp(elevio.BT_Cab, button_pushed.Floor, true)
+			elevio.SetButtonLamp(BT_Cab, button_pushed.Floor, true)
 			//Inside order: Add order to intern list, no need for sharing
 			intern_order_list[button_pushed.Floor] = 1
 			check_for_extra_stop()
@@ -212,10 +212,10 @@ func button_event(button_pushed elevio.ButtonEvent, new_order_ch chan<- elevio.B
 				reset_timer_ch <- true
 			} else {
 				intern_order_list[button_pushed.Floor] = 1
-				elevio.SetButtonLamp(elevio.BT_Cab, button_pushed.Floor, true)
+				elevio.SetButtonLamp(BT_Cab, button_pushed.Floor, true)
 			}
 		case POWERLOSS:
-			elevio.SetButtonLamp(elevio.BT_Cab, button_pushed.Floor, true)
+			elevio.SetButtonLamp(BT_Cab, button_pushed.Floor, true)
 			intern_order_list[button_pushed.Floor] = 1
 
 			/*fmt.Printf("opendoor")
@@ -226,12 +226,12 @@ func button_event(button_pushed elevio.ButtonEvent, new_order_ch chan<- elevio.B
 		open_door()
 		reset_timer_ch <- true
 	} else { //Send order to other Module
-		new_order := elevio.ButtonEvent{Floor: button_pushed.Floor, Button: button_pushed.Button}
+		new_order := Order{Floor: button_pushed.Floor, Button: button_pushed.Button}
 		go func() { new_order_ch <- new_order }()
 	}
 }
 func clear_extern_ligts_on_floor(floor int) {
-	for i := elevio.BT_HallUp; i <= elevio.BT_HallDown; i++ {
+	for i := BT_HallUp; i <= BT_HallDown; i++ {
 		elevio.SetButtonLamp(i, floor, false)
 	}
 }
@@ -244,7 +244,7 @@ func clear_extern_order_on_floor(floor int) {
 }
 
 func clear_all_lights_on_floor(floor int) {
-	for i := elevio.BT_HallUp; i <= elevio.BT_Cab; i++ {
+	for i := BT_HallUp; i <= BT_Cab; i++ {
 		elevio.SetButtonLamp(i, floor, false)
 	}
 }
@@ -281,7 +281,7 @@ func floor_event(floor int, reset_timer_ch chan<- bool, stop_power_loss_timer_ch
 			if intern_order_list[i] == 1 && elevator.Last_known_floor == i{
 
 				//konfigurer lys
-				elevator.Destination = elevio.ButtonEvent{Button: elevio.BT_Cab, Floor: i}
+				elevator.Destination = Order{Button: BT_Cab, Floor: i}
 				clear_all_lights_on_floor(i)
 				clear_all_order_on_floor(i)
 				open_door()
@@ -294,7 +294,7 @@ func floor_event(floor int, reset_timer_ch chan<- bool, stop_power_loss_timer_ch
 			check_for_extra_stop()
 			update_direction()
 			elevio.SetMotorDirection(elevator.Dir)
-			if elevator.Dir != elevio.MD_Stop{
+			if elevator.Dir != MD_Stop{
 				elevator.State = MOVING
 				go func() { reset_power_loss_timer_ch <- true }()
 			}
@@ -336,7 +336,7 @@ func door_open_event(reset_power_loss_timer_ch chan<- bool) {
 		close_door()
 		if elevator.Destination.Floor == elevator.Last_known_floor {
 			priorityVariable := false
-			if elevator.Destination.Button == elevio.BT_HallUp {
+			if elevator.Destination.Button == BT_HallUp {
 				priorityVariable = true
 			}
 			elevator.Destination = Empty_order
@@ -345,7 +345,7 @@ func door_open_event(reset_power_loss_timer_ch chan<- bool) {
 		check_for_extra_stop()
 		update_direction()
 		elevio.SetMotorDirection(elevator.Dir)
-		if elevator.Dir != elevio.MD_Stop{
+		if elevator.Dir != MD_Stop{
 			elevator.State = MOVING
 			go func(){reset_power_loss_timer_ch<- true}()
 		}
@@ -353,7 +353,7 @@ func door_open_event(reset_power_loss_timer_ch chan<- bool) {
 	backup.Update_backup(intern_order_list, elevator.Destination)
 }
 
-func extern_order_event(order elevio.ButtonEvent, reset_timer_ch chan<- bool, reset_power_loss_timer_ch chan<- bool) {
+func extern_order_event(order Order, reset_timer_ch chan<- bool, reset_power_loss_timer_ch chan<- bool) {
 	switch elevator.State {
 	case IDLE:
 		if order.Floor == elevator.Last_known_floor {
@@ -368,7 +368,7 @@ func extern_order_event(order elevio.ButtonEvent, reset_timer_ch chan<- bool, re
 			find_new_destination(false)
 			update_direction()
 			elevio.SetMotorDirection(elevator.Dir)
-			if elevator.Dir != elevio.MD_Stop {
+			if elevator.Dir != MD_Stop {
 				elevator.State = MOVING
 				go func() { reset_power_loss_timer_ch <- true }()
 			}

@@ -1,32 +1,41 @@
 //ELEVATOR CONFIGURATION
 package config
-//import "flag"
-/*
-import "os"
-import "strconv"
-*/
-
-import(
-
-	"../driver/elevio"
-)
-
-
 
 const (
 	//System variables
 	N_floors    = 4
 	N_elevators = 3
-
-	//Local variables
 )
-var ElevatorNumber int
+
+
+type Order struct {
+	Floor  int
+	Button ButtonType
+}
+
+type MotorDirection int
+
+const (
+	MD_Up   MotorDirection = 1
+	MD_Down                = -1
+	MD_Stop                = 0
+)
+
+type ButtonType int
+
+const (
+	//Swapped BT_Cab and BT_HallUp
+	BT_HallUp   ButtonType = 0
+	BT_HallDown           = 1
+	BT_Cab         			= 2
+	//Empty buttinevent (No order)
+	BT_No_call 					= -1
+)
 
 type Elevator struct {
-	//Destination floor
-	Destination      elevio.ButtonEvent
+	Destination      Order
 	Last_known_floor int
-	Dir              elevio.MotorDirection
+	Dir              MotorDirection
 	State            ElevState
 }
 
@@ -41,9 +50,9 @@ const (
 
 
 type Msg_struct struct {
-	Destination      elevio.ButtonEvent
+	Destination      Order
 	Last_known_floor int
-	Dir              elevio.MotorDirection
+	Dir              MotorDirection
 	State            ElevState
 	ID               string
 	Ack_list				 [2][N_floors]int

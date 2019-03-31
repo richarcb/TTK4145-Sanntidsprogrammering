@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"os"
 	"bufio"
-	"../driver/elevio"
-  "../config"
+  . "../config"
 )
 
 var path = "./backup.txt"
 
-func Update_backup(orders [config.N_floors]int, dest elevio.ButtonEvent) { //CreateBackup
-	if dest.Button == elevio.BT_Cab{
+func Update_backup(orders [N_floors]int, dest Order) { //CreateBackup
+	if dest.Button == BT_Cab{
 		orders[dest.Floor] = 1
 	}
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0666)

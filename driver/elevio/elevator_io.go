@@ -4,6 +4,7 @@ import "time"
 import "sync"
 import "net"
 import "fmt"
+import . "../../config"
 
 
 
@@ -13,30 +14,6 @@ var _initialized bool = false
 var _numFloors int = 4
 var _mtx sync.Mutex
 var _conn net.Conn
-
-type MotorDirection int
-
-const (
-	MD_Up   MotorDirection = 1
-	MD_Down                = -1
-	MD_Stop                = 0
-)
-
-type ButtonType int
-
-const (
-	//Swapped BT_Cab and BT_HallUp
-	BT_HallUp   ButtonType = 0
-	BT_HallDown           = 1
-	BT_Cab         			= 2
-	//Empty buttinevent (No order)
-	BT_No_call 					= -1
-)
-
-type ButtonEvent struct {
-	Floor  int
-	Button ButtonType
-}
 
 func Init(addr string, numFloors int) {
 	if _initialized {
@@ -56,7 +33,7 @@ func Init(addr string, numFloors int) {
 func InitElev()int{
 	SetMotorDirection(MD_Down)
 	floor:= getFloor()
-	
+
 	for floor == -1{
 		  floor = getFloor()
 	  }
@@ -99,7 +76,7 @@ func SetStopLamp(value bool) {
 
 
 
-func PollButtons(receiver chan<- ButtonEvent) {
+func PollButtons(receiver chan<- Order) {
 	prev := make([][3]bool, _numFloors)
 	for {
 		time.Sleep(_pollRate)
@@ -107,7 +84,7 @@ func PollButtons(receiver chan<- ButtonEvent) {
 			for b := ButtonType(0); b < 3; b++ {
 				v := getButton(b, f)
 				if v != prev[f][b] && v != false {
-					receiver <- ButtonEvent{f, ButtonType(b)}
+					receiver <- Order{f, ButtonType(b)}
 				}
 				prev[f][b] = v
 			}

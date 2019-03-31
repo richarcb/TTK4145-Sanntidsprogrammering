@@ -10,13 +10,12 @@ import (
 . "./config"
 	"./control"
 	"./fsm"
-	"./synchronise"
+	com "./network/communication"
 	"./driver/elevio"
 )
 
-func main() {
+func initialize_elevator_system() (int,string){
 	port := os.Args[1]
-	//config.Init_elevconfig()
 	var id string
 	flag.StringVar(&id, "id", "", "id of this peer")
 	flag.Parse()
@@ -33,6 +32,7 @@ func main() {
 		}
 		id = fmt.Sprintf("peer-%s-%d", localIP, os.Getpid())
 	}
+
 	init_outgoing_msg_ch:= make(chan Msg_struct)
 	init_ID_ch:= make(chan string,1)
 
@@ -43,75 +43,48 @@ func main() {
 //15657
 	elevio.Init("localhost:"+port, N_floors)
 	fsm.Init_mem()
-	start_floor := elevio.InitElev()
+ 	return elevio.InitElev(),id
+}
 
 
+func main() {
+	start_floor,id := initialize_elevator_system()
 
-	/*drv_buttons := make(chan elevio.ButtonEvent)
-	  drv_floors  := make(chan int)
-	  drv_obstr   := make(chan bool)
-	  drv_stop    := make(chan bool)
-	*/
-	//Network
-	//UDPmsgTx := make(chan FSM.Elevator)
-	//UDPmsgRx := make(chan FSM.Elevator)
-
-	//FSM
-	fsmCh := fsm.FsmChannels{
-				Cancel_illuminate_extern_order_ch: make(chan int),
-				Illuminate_extern_order_ch: make(chan elevio.ButtonEvent),
-				Extern_order_ch: make(chan elevio.ButtonEvent),
-				Buttons_ch: make(chan elevio.ButtonEvent),
+	//channels
+	fsm_ch := fsm.Fsm_channels{
+				Clear_lights_and_extern_orders_ch: make(chan int),
+				Illuminate_extern_order_ch: make(chan Order),
+				Extern_order_ch: make(chan Order),
+				Buttons_ch: make(chan Order),
 				Floors_ch: make(chan int),
-				Reached_extern_floor_ch: make(chan elevio.ButtonEvent),
-				New_order_ch: make(chan elevio.ButtonEvent),
-				State_ch: make(chan Elevator),
-				}
-	/*
-	   outgoing_msg_ch := make(chan sync.Msg_struct)
-	   incoming_msg_ch := make(chan sync.Msg_struct)
-	   peer_update_ch := make(chan peers.PeerUpdate)
-	   peer_trans_en_ch := make(chan bool)
-	*/
-	//Local FSM
-	//reset_timer_pl_ch  := make(chan bool)
-	//stop_timer_pl_ch  := make(chan bool)
-	//power_loss_ch  := make(chan bool)
+				New_order_ch: make(chan Order),
+				State_ch: make(chan Elevator)}
 
-	//Distribute_and_control channes:
-	ctrlCh := control.ControlChannels{
-				Reset_received_order_ch : make(chan bool),
-				Update_outgoing_msg_ch : make(chan Msg_struct),
-				Update_elev_list_ch : make(chan Msg_struct),
-				Lost_peers_ch : make(chan []string),
-				New_peer_ch : make(chan string),
-				Outgoing_msg_ch : make(chan Msg_struct),
-				Incoming_msg_ch : make(chan Msg_struct),
-				Peer_trans_en_ch : make(chan bool),
-				Peer_update_ch : make(chan peers.PeerUpdate),
-				Clear_lights_and_extern_orders_ch :make(chan int),
-	}
+	com_ch := com.Communication_channels{
+		Init_outgoing_msg_ch: make(chan Msg_struct),
+		Update_outgoing_msg_ch : make(chan Msg_struct),
+		Update_control_variables_ch : make(chan Msg_struct),
+		Lost_peers_ch : make(chan []string),
+		New_peer_ch : make(chan string),
+		Outgoing_msg_ch : make(chan Msg_struct),
+		Incoming_msg_ch : make(chan Msg_struct),
+		Peer_update_ch : make(chan peers.PeerUpdate)}
 
-//ROUTINES
+		peer_trans_en_ch:= make(chan bool)
 
-	go elevio.PollButtons(fsmCh.Buttons_ch)
-	go elevio.PollFloorSensor(fsmCh.Floors_ch)
-	//go elevio.PollObstructionSwitch(drv_obstr)
-	//go elevio.PollStopButton(drv_stop)
+//Go Routines
 
-	go control.Distribute_and_control(fsmCh, ctrlCh)
-	go fsm.EventHandler(fsmCh, start_floor, ctrlCh.Clear_lights_and_extern_orders_ch)
-	go sync.Synchronizing(init_outgoing_msg_ch, fsmCh, ctrlCh)
+	go elevio.PollButtons(fsm_ch.Buttons_ch)
+	go elevio.PollFloorSensor(fsm_ch.Floors_ch)
 
+	go control.Control(com_ch.Update_outgoing_msg_ch, com_ch.New_peer_ch, com_ch.Lost_peers_ch,com_ch.Update_control_variables_ch,fsm_ch.Extern_order_ch, fsm_ch.New_order_ch,fsm_ch.State_ch,fsm_ch.Illuminate_extern_order_ch,fsm_ch.Clear_lights_and_extern_orders_ch)
+	go fsm.EventHandler(fsm_ch, start_floor)
+	go com.Communication(com_ch)
 
-
-	//Synchronize
-	go bcast.Transmitter(12345, ctrlCh.Outgoing_msg_ch)
-	go bcast.Receiver(12345, ctrlCh.Incoming_msg_ch)
-	go peers.Transmitter(15647, id, ctrlCh.Peer_trans_en_ch)
-	go peers.Receiver(15647, ctrlCh.Peer_update_ch)
-	//go sync.TransmitMsg(outgoing_msg_ch)
-	//go sync.ReceiveMsg(incoming_msg_ch)
+	go bcast.Transmitter(12345, com_ch.Outgoing_msg_ch)
+	go bcast.Receiver(12345, com_ch.Incoming_msg_ch)
+	go peers.Transmitter(15647, id, peer_trans_en_ch)
+	go peers.Receiver(15647, com_ch.Peer_update_ch)
 
 
 	select {}
@@ -130,17 +103,17 @@ func main() {
 
 /*
 
-func RandomOrderGenerator(receiver chan elevio.ButtonEvent) {
-	var order elevio.ButtonEvent
+func RandomOrderGenerator(receiver chan Order) {
+	var order Order
 	BT_type := rand.Intn(3)
 	if BT_type == 0 {
-		order.Button = elevio.BT_HallUp
+		order.Button = BT_HallUp
 		order.Floor = rand.Intn(3)
 	} else if BT_type == 1 {
-		order.Button = elevio.BT_HallDown
+		order.Button = BT_HallDown
 		order.Floor = rand.Intn(3) + 1
 	} else {
-		order.Button = elevio.BT_Cab
+		order.Button = BT_Cab
 		order.Floor = rand.Intn(4)
 	}
 
