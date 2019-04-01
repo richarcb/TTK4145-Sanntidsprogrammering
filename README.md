@@ -21,4 +21,4 @@ The following requirements should be met:
 
 ## Our solution
 
-We wrote our solution in the google go programming language. We decided to share information between elevators by using UDP boradcast, sending information to all peers connected at a set frequency. A more complementary description of each module is given in the README.md files for the module.
+We wrote our solution in the google go programming language. We decided to share information between elevators by using UDP boradcast, sending information to all peers connected at a set frequency. The stop and obstruction switch are disabled. When an elevator stops at a floor and open its doors, we assume that people waiting for the elevator will go inside, hence we delete all orders on this floor. When an elevator can not connect to the network, it goes in a "single elevator mode", and operates as a single elevator. A more complementary description of each module is given in the README.md files for the module.
