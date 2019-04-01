@@ -9,11 +9,11 @@ import (
 	"./network/peers"
 . "./config"
 	"./control"
-	"./fsm"
+	"./esm"
 	com "./network/communication"
 	"./driver/elevio"
 )
-//Initializes elevator's IP config
+
 func initialize_elevator_system() (int,string){
 	port := os.Args[1]
 	var id string
@@ -35,10 +35,8 @@ func initialize_elevator_system() (int,string){
 	go control.Init_variables(init_ID_ch, init_outgoing_msg_ch)
 	init_ID_ch<-id
 
-
-//15657 --> default simulator port
 	elevio.Init("localhost:"+port, N_floors)
-	fsm.Init_mem()
+	esm.Init_mem()
  	return elevio.InitElev(),id
 }
 
@@ -46,8 +44,7 @@ func initialize_elevator_system() (int,string){
 func main() {
 	start_floor,id := initialize_elevator_system()
 
-	//Local fsm channels
-	fsm_ch := fsm.Fsm_channels{
+	esm_ch := esm.Esm_channels{
 		Clear_lights_and_extern_orders_ch: 	make(chan int),
 		Illuminate_extern_order_ch:					make(chan Order),
 		Extern_order_ch: 										make(chan Order),
@@ -72,12 +69,12 @@ func main() {
 		//GO ROUTINES
 
 //Driver sensors
-	go elevio.PollButtons(fsm_ch.Buttons_ch)
-	go elevio.PollFloorSensor(fsm_ch.Floors_ch)
+	go elevio.PollButtons(esm_ch.Buttons_ch)
+	go elevio.PollFloorSensor(esm_ch.Floors_ch)
 
 //Elevator routines
-	go control.Control(com_ch.Update_outgoing_msg_ch, com_ch.New_peer_ch, com_ch.Lost_peers_ch,com_ch.Update_control_variables_ch,fsm_ch.Extern_order_ch, fsm_ch.New_order_ch,fsm_ch.State_ch,fsm_ch.Illuminate_extern_order_ch,fsm_ch.Clear_lights_and_extern_orders_ch)
-	go fsm.EventHandler(fsm_ch, start_floor)
+	go control.Control(com_ch.Update_outgoing_msg_ch, com_ch.New_peer_ch, com_ch.Lost_peers_ch,com_ch.Update_control_variables_ch,esm_ch.Extern_order_ch, esm_ch.New_order_ch,esm_ch.State_ch,esm_ch.Illuminate_extern_order_ch,esm_ch.Clear_lights_and_extern_orders_ch)
+	go esm.EventHandler(esm_ch, start_floor)
 	go com.Communication(com_ch)
 
 //Transmitters/Receivers
@@ -89,33 +86,3 @@ func main() {
 
 	select {}
 }
-
-
-
-/*
-  for{
-
-    timer1 := time.NewTimer( 4* time.Second)
-    <-timer1.C
-    RandomOrderGenerator(buttons_ch)
-  }
-}
-
-/*
-
-func RandomOrderGenerator(receiver chan Order) {
-	var order Order
-	BT_type := rand.Intn(3)
-	if BT_type == 0 {
-		order.Button = BT_HallUp
-		order.Floor = rand.Intn(3)
-	} else if BT_type == 1 {
-		order.Button = BT_HallDown
-		order.Floor = rand.Intn(3) + 1
-	} else {
-		order.Button = BT_Cab
-		order.Floor = rand.Intn(4)
-	}
-
-	receiver <- order
-}*/
