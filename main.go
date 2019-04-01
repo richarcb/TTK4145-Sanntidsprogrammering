@@ -66,8 +66,8 @@ func main() {
 
 		peer_trans_en_ch:= make(chan bool)
 
-		//GO ROUTINES
 
+		//GO ROUTINES
 //Driver sensors
 	go elevio.PollButtons(esm_ch.Buttons_ch)
 	go elevio.PollFloorSensor(esm_ch.Floors_ch)

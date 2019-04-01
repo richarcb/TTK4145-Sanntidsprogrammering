@@ -1,7 +1,6 @@
 package esm
 
 import (
-	"fmt"
 	"../driver/elevio"
 . "../config"
 )
@@ -25,7 +24,6 @@ func insert_front(front_elem Order) {
 	queue[0] = front_elem
 }
 
-
 //Adds order in queue
 func push_back(elem Order) {
 	for i := 0; i < len(queue); i++ {
@@ -45,7 +43,7 @@ func check_for_extra_stop() {
 
 	switch elevator.Dir {
 	case MD_Stop:
-		if elevator.Last_known_floor < elevator.Destination.Floor { //UP
+		if elevator.Last_known_floor < elevator.Destination.Floor { //going up
 			for i := elevator.Last_known_floor + 1; i < elevator.Destination.Floor; i++ {
 				if intern_order_list[i] == 1 && (i < extra_stop.Floor || extra_stop.Floor == empty_order.Floor) {
 					extra_stop = Order{Floor: i, Button: BT_Cab}
@@ -61,7 +59,7 @@ func check_for_extra_stop() {
 					}
 				}
 			}
-		} else if elevator.Last_known_floor > elevator.Destination.Floor { //Down
+		} else if elevator.Last_known_floor > elevator.Destination.Floor { //going down
 			for i := elevator.Last_known_floor - 1; i > elevator.Destination.Floor; i-- {
 				if intern_order_list[i] == 1 && i > extra_stop.Floor {
 					extra_stop = Order{Floor: i, Button: BT_Cab}
@@ -140,26 +138,21 @@ func find_new_destination(priority bool) {
 	elevator.Destination = new_dest
 }
 
-//Closes door after Dooropen state
 func close_door() {
 	elevio.SetDoorOpenLamp(false)
 	elevator.State = IDLE
 }
 
-
-//Sets state to Dooropen
-func open_door() { //On floor, doors open
+func open_door() {
 	if elevator.Dir != MD_Stop {
 		return
 	}
 	elevio.SetDoorOpenLamp(true)
 	elevator.State = DOOROPEN
-	//start timer
 }
 
 //Checks if direction should be updated depending on current orders
 func update_direction() {
-	//Never called whene
 	if extra_stop.Floor == elevator.Last_known_floor || elevator.Destination.Floor == elevator.Last_known_floor {
 		elevator.Dir = MD_Stop
 	} else if elevator.Destination.Floor > elevator.Last_known_floor {
@@ -171,21 +164,11 @@ func update_direction() {
 	}
 }
 
-
-//Sets the elevator's motor
-func drive() { //Drive
-	if elevator.State == DOOROPEN {
-		return
-	}
-	elevio.SetMotorDirection(elevator.Dir)
-}
-
-//Finite state machine event for button event
+//Finite state machine button event
 func button_event(button_pushed Order, new_order_ch chan<- Order, reset_door_timer_ch chan<- bool, reset_power_loss_timer_ch chan<- bool) {
 	if button_pushed.Button == BT_Cab {
 		switch elevator.State {
 		case IDLE:
-			esm_print()
 			if button_pushed.Floor == elevator.Last_known_floor {
 				elevator.Destination = button_pushed
 				open_door()
@@ -204,49 +187,46 @@ func button_event(button_pushed Order, new_order_ch chan<- Order, reset_door_tim
 			}
 
 		case MOVING:
-			esm_print()
 			elevio.SetButtonLamp(BT_Cab, button_pushed.Floor, true)
 			//Inside order: Add order to intern list, no need for sharing
 			intern_order_list[button_pushed.Floor] = 1
 			check_for_extra_stop()
 
 		case DOOROPEN:
-			esm_print()
 			if button_pushed.Floor == elevator.Last_known_floor {
-				if elevator.Destination.Floor == empty_order.Floor { //BUGFIX
+				if elevator.Destination.Floor == empty_order.Floor {
 					elevator.Destination = button_pushed
 				}
 				open_door()
 				reset_door_timer_ch <- true
 			} else {
+				//Inside order: Add order to intern list, no need for sharing
 				intern_order_list[button_pushed.Floor] = 1
 				elevio.SetButtonLamp(BT_Cab, button_pushed.Floor, true)
 			}
 		case POWERLOSS:
 			elevio.SetButtonLamp(BT_Cab, button_pushed.Floor, true)
+			//Inside order: Add order to intern list, no need for sharing
 			intern_order_list[button_pushed.Floor] = 1
-
-			/*fmt.Printf("opendoor")
-			timerReset <- true*/
 		}
-		update_backup(intern_order_list, elevator.Destination) //New backup.
+		update_backup(intern_order_list, elevator.Destination)
 	} else if button_pushed.Floor == elevator.Last_known_floor && elevator.State != MOVING {
 		open_door()
 		reset_door_timer_ch <- true
-	} else { //Send order to other Module
+	} else { //Send order to other Control module
 		new_order := Order{Floor: button_pushed.Floor, Button: button_pushed.Button}
 		go func() { new_order_ch <- new_order }()
 	}
 }
 
-//Clears lights
+//Clear lights in hall buttons on floor
 func clear_extern_ligts_on_floor(floor int) {
 	for i := BT_HallUp; i <= BT_HallDown; i++ {
 		elevio.SetButtonLamp(i, floor, false)
 	}
 }
 
-//Clears orders on selected floor
+//Clear hall orders on florr
 func clear_extern_order_on_floor(floor int) {
 	for i := 0; i < len(queue); i++ {
 		if queue[i].Floor == floor {
@@ -255,14 +235,12 @@ func clear_extern_order_on_floor(floor int) {
 	}
 }
 
-//Clears lights at selected floor
 func clear_all_lights_on_floor(floor int) {
 	for i := BT_HallUp; i <= BT_Cab; i++ {
 		elevio.SetButtonLamp(i, floor, false)
 	}
 }
 
-//Clears all types of orders on floors
 func clear_all_order_on_floor(floor int) {
 	intern_order_list[floor] = 0
 	for i := 0; i < len(queue); i++ {
@@ -274,7 +252,7 @@ func clear_all_order_on_floor(floor int) {
 	}
 }
 
-//Finite state machine event for powerloss
+//Finite state machine powerloss event
 func power_loss_event(stop_power_loss_timer_ch chan<- bool) {
 	if elevator.State == MOVING{
 		elevator.State = POWERLOSS
@@ -288,7 +266,7 @@ func power_loss_event(stop_power_loss_timer_ch chan<- bool) {
 
 }
 
-//Finite state machine event for floor sensor event
+//Finite state machine floor sensor event
 func floor_event(floor int, reset_door_timer_ch chan<- bool, stop_power_loss_timer_ch chan<- bool, reset_power_loss_timer_ch chan<- bool) {
 	elevator.Last_known_floor = floor
 
@@ -320,7 +298,6 @@ func floor_event(floor int, reset_door_timer_ch chan<- bool, stop_power_loss_tim
 		if elevator.Destination.Floor == floor || extra_stop.Floor == floor {
 			update_direction()
 			elevio.SetMotorDirection(elevator.Dir)
-			//konfigurer lys
 			clear_all_lights_on_floor(floor)
 			clear_all_order_on_floor(floor)
 			open_door()
@@ -331,7 +308,6 @@ func floor_event(floor int, reset_door_timer_ch chan<- bool, stop_power_loss_tim
 		}
 	case MOVING:
 		go func() { reset_power_loss_timer_ch <- true }()
-		esm_print()
 		if elevator.Destination.Floor == floor || extra_stop.Floor == floor {
 			go func() { stop_power_loss_timer_ch <- true }()
 			update_direction()
@@ -339,7 +315,6 @@ func floor_event(floor int, reset_door_timer_ch chan<- bool, stop_power_loss_tim
 			clear_all_lights_on_floor(floor)
 			clear_all_order_on_floor(floor)
 			open_door()
-			fmt.Println(queue)
 			reset_door_timer_ch <- true
 		}
 	}
@@ -369,7 +344,7 @@ func door_timer_event(reset_power_loss_timer_ch chan<- bool) {
 	update_backup(intern_order_list, elevator.Destination)
 }
 
-//Finite state machine for getting an external order from the network
+//Finite state machine for getting an external order from the control module
 func extern_order_event(order Order, reset_door_timer_ch chan<- bool, reset_power_loss_timer_ch chan<- bool) {
 	switch elevator.State {
 	case IDLE:
@@ -380,7 +355,6 @@ func extern_order_event(order Order, reset_door_timer_ch chan<- bool, reset_powe
 			reset_door_timer_ch <- true
 		} else {
 			elevio.SetButtonLamp(order.Button, order.Floor, true)
-			//Inside order: Add order to intern list, no need for sharing
 			push_back(order)
 			find_new_destination(false)
 			update_direction()
@@ -407,15 +381,4 @@ func extern_order_event(order Order, reset_door_timer_ch chan<- bool, reset_powe
 			check_for_extra_stop()
 		}
 	}
-}
-
-//Prints current states
-func esm_print() {
-	fmt.Printf("-----------NEW UPDATE ----------\n")
-	fmt.Printf("State: %#v\n", elevator.State)
-	fmt.Printf("Floor: %#v\n", elevator.Last_known_floor)
-	fmt.Printf("Direction: %#v\n", elevator.Dir)
-	fmt.Printf("Extra_stop: %#v\n", extra_stop.Floor)
-	fmt.Printf("Destination: %#v\n", elevator.Destination.Floor)
-	return
 }

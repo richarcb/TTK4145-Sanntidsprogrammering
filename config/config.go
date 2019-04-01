@@ -1,6 +1,6 @@
-//ELEVATOR CONFIGURATION
 package config
 
+//Scalable declaration of the number of floors and elevators
 const (
 	N_floors    = 4
 	N_elevators = 3
@@ -27,7 +27,6 @@ const (
 	BT_No_call 					= -1
 )
 
-//Local Elevator struct
 type Elevator struct {
 	Destination      Order
 	Last_known_floor int
@@ -44,7 +43,6 @@ const (
 	POWERLOSS					 = 3
 )
 
-//External Elevator struct
 type Msg_struct struct {
 	Destination      Order
 	Last_known_floor int

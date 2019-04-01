@@ -36,7 +36,6 @@ func Communication(ch Communication_channels){
 					go func(){ch.New_peer_ch<-p.New}()
 			}
 				if len(p.Lost) > 0 {
-					//var lost_peers [len(p.Lost)]int
 					go func(){ch.Lost_peers_ch<-p.Lost}()
 				}
 

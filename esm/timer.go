@@ -4,6 +4,8 @@ import (
 	"time"
 )
 
+//This file contains timers for door open and powerloss
+
 func door_timer(close_door_ch chan<- bool, reset_timer <-chan bool) {
 	const doorOpenTime = 3 * time.Second
 	timer := time.NewTimer(0)

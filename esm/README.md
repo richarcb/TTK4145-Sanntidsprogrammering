@@ -14,4 +14,4 @@ Powerloss event - The elevator has been moving for a set period and not reached 
 Messages from the control module - Concrete actions which must be done, such as illuminate and darken lights, new hall orders and clear orders.
 
 
-This module also contains backup features, which saves all its Cab orders in a txt file in case of the program gets terminated and needs to reinitialize.  
+This module also contains backup functions, which saves all its Cab orders in a txt file in case of the program gets terminated and needs to reinitialize.  

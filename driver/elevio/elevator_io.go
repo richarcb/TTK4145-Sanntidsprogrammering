@@ -6,8 +6,6 @@ import "net"
 import "fmt"
 import . "../../config"
 
-
-
 const _pollRate = 20 * time.Millisecond
 
 var _initialized bool = false
@@ -41,8 +39,6 @@ func InitElev()int{
 	  fmt.Printf("Initialized floor! \n")
 	  return floor
 	}
-
-
 
 func SetMotorDirection(dir MotorDirection) {
 	_mtx.Lock()
@@ -127,12 +123,6 @@ func PollObstructionSwitch(receiver chan<- bool) {
 		prev = v
 	}
 }
-
-
-
-
-
-
 
 func getButton(button ButtonType, floor int) bool {
 	_mtx.Lock()

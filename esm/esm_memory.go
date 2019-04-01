@@ -6,24 +6,21 @@ import (
 
 
 )
-//MEMORY START
 
 var extra_stop Order
 var empty_order Order
 
 //Hall order elevator queue
+//Contains order with type (Up or Down) and floor
+//A new order is pushed in the last position in the queue
 var queue [N_floors * 2]Order
 
-//Cab order elevator queue
+//Cab order elevator queue,
+//List of 0's (no order on floor) and 1's (order on floor)
 var intern_order_list [N_floors]int
-
-//elavtor variables
 var elevator Elevator
 
-//MEMORY END
-
-
-//Initializes elevator's memory. Memory is defined above
+//Initializes elevator's memory.
 func Init_mem() {
 	empty_order.Floor = -1
 	empty_order.Button = BT_No_call

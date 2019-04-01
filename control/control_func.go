@@ -36,7 +36,7 @@ func set_value_in_ack_list(value int, order Order) {
 }
 
 func update_local_elevator_struct(elevator Elevator) {
-	//Updates its own elevator_struct
+	//Updates its own elevator_struct in elevator_list
 	(*elev_list[elevID]).destination = elevator.Destination
 	(*elev_list[elevID]).last_known_floor = elevator.Last_known_floor
 	(*elev_list[elevID]).state = elevator.State
@@ -52,7 +52,7 @@ func update_outgoing_msg(elevator Elevator) {
 }
 
 func update_extern_elevator_struct(elevator Msg_struct) {
-	//Update elevator_struct from msg!
+	//Update elevator_list from msg
 	if elev_list[elevator.ID] == nil {
 		return
 	}
@@ -115,7 +115,7 @@ func getLowestCostElevatorID(order Order) string {
 	lowestCost := N_floors
 	assignedID := ""
 
-	//Sorting the IDs
+	//Sorting the IDs to make sure that the cost function give the same result when runned on different elevators
 	var keys []string
 	for k:= range elev_list{
 		keys = append(keys,k)
@@ -133,6 +133,7 @@ func getLowestCostElevatorID(order Order) string {
 	return assignedID
 }
 
+//The order acknowledging system is implemented in this function
 func synchronize (inc_msg Msg_struct, illuminate_extern_order_ch chan<- Order, extern_order_ch chan<- Order){
 	for i := 0; i < 2; i++ {
 		for j := 0; j < N_floors; j++ {
@@ -193,6 +194,7 @@ func handling_powerloss(inc_msg Msg_struct){
 	if inc_msg.State == POWERLOSS {
 		for i := 0; i < 2; i++ {
 			for j := 0; j < N_floors; j++ {
+				//Delete order in elevators queue if elevator has powerloss
 				if (*elev_list[inc_msg.ID]).queue[i][j] == 1 && outgoing_msg.Ack_list[i][j] != -1 {
 					outgoing_msg.Ack_list[i][j] = 1
 					(*elev_list[inc_msg.ID]).queue[i][j] = 0
@@ -203,6 +205,7 @@ func handling_powerloss(inc_msg Msg_struct){
 	if (*elev_list[elevID]).state == POWERLOSS {
 		for i := 0; i < 2; i++ {
 			for j := 0; j < N_floors; j++ {
+				//Delete orders in own queue if poerloss
 				if (*elev_list[elevID]).queue[i][j] == 1 && (inc_msg.Ack_list[i][j] == 1 || inc_msg.Ack_list[i][j] == -1) {
 					(*elev_list[elevID]).queue[i][j] = 0
 				}
@@ -214,7 +217,6 @@ func handling_powerloss(inc_msg Msg_struct){
 func delete_order_if_handled(id string, clear_lights_and_extern_orders_ch chan<- int) {
 	if (*elev_list[id]).state == DOOROPEN {
 		if id != elevID{
-			//Clear lights
 			go func() { clear_lights_and_extern_orders_ch <- (*elev_list[id]).last_known_floor}()
 		}
 		(*elev_list[id]).queue[0][(*elev_list[id]).last_known_floor] = 0
@@ -224,7 +226,7 @@ func delete_order_if_handled(id string, clear_lights_and_extern_orders_ch chan<-
 
 func lost_peer_event (lost_peers []string){
 	for i := 0; i < len(lost_peers); i++ {
-		//Take Orders first!
+		//Copy orders before deleting elevator
 		for j := 0; j < 2; j++ {
 			for k := 0; k < N_floors; k++ {
 				if (*elev_list[lost_peers[i]]).queue[j][k] == 1 && outgoing_msg.Ack_list[j][k] != -1 {

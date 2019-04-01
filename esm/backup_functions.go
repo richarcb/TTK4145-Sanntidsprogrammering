@@ -1,7 +1,5 @@
 package esm
 
-//package main //for testing main
-
 import (
 	"fmt"
 	"os"
@@ -12,7 +10,7 @@ import (
 var path = "./backup.txt"
 
 //Writes the orders array to the backup file backup.txt
-func update_backup(orders [N_floors]int, dest Order) { //CreateBackup
+func update_backup(orders [N_floors]int, dest Order) {
 	if dest.Button == BT_Cab{
 		orders[dest.Floor] = 1
 	}

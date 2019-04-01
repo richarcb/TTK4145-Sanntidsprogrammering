@@ -6,6 +6,7 @@ import (
 
 var elevID string
 var single_mode bool
+//Elevator list is a map of elevator_states containing information about all elevators on the network
 type elevator_list map[string]*elevator_states
 var elev_list elevator_list
 var outgoing_msg Msg_struct

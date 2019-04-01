@@ -36,17 +36,14 @@ func EventHandler(esm_ch Esm_channels, start_floor int) {
 		select {
 		case button_pushed := <-esm_ch.Buttons_ch:
 			button_event(button_pushed, esm_ch.New_order_ch, reset_door_timer_ch, reset_power_loss_timer_ch)
-			//esm_print()
 			go func() { esm_ch.State_ch <- elevator }()
 		case floor := <-esm_ch.Floors_ch:
 			elevio.SetFloorIndicator(floor)
 			floor_event(floor, reset_door_timer_ch, stop_power_loss_timer_ch, reset_power_loss_timer_ch)
-			//esm_print()
 			go func() { esm_ch.State_ch <- elevator }()
 
 		case <-door_timer_ch:
 			door_timer_event(reset_power_loss_timer_ch)
-			//esm_print()
 			go func() { esm_ch.State_ch <- elevator }()
 
 		case order := <-esm_ch.Extern_order_ch:
