@@ -2,7 +2,7 @@
 
 This module contains code for network and communication between the elevators. Except for the [communication](actual URL to navigate) folder, the code in this module is written by [TTK4145](https://github.com/TTK4145) and can be found [here](https://github.com/TTK4145/Network-go). There has been made some minor changes to the code to make it suit our system,  but it is mostly the equal to the original module.
 
-##Features
+## Features
 
 Channel-in/channel-out pairs of (almost) any custom or built-in datatype can be supplied to a pair of transmitter/receiver functions. Data sent to the transmitter function is automatically serialized and broadcasted on the specified port. Any messages received on the receiver's port are deserialized (as long as they match any of the receiver's supplied channel datatypes) and sent on the corresponding channel. See [bcast.Transmitter and bcast.Receiver](https://github.com/TTK4145/Network-go/blob/master/network/bcast/bcast.go).
 
